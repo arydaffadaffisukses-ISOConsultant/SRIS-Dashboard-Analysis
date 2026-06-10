@@ -1,35 +1,39 @@
-# testing update
 import streamlit as st
+import pandas as pd
 from pypdf import PdfReader
 
-def extract_text_from_pdf(pdf_file):
-    reader = PdfReader(pdf_file)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text()
-    return text
+st.title("SMK3 Clause & Data Advisor")
 
-st.title("SMK3 Clause Advisor")
-st.write("Unggah dokumen SMK3 Bapak untuk mulai bertanya.")
-
-uploaded_file = st.file_uploader("Upload PDF SMK3 PP 50 2012", type="pdf")
+uploaded_file = st.file_uploader("Upload Dokumen (PDF, Excel, atau CSV)", type=["pdf", "xlsx", "csv"])
 
 if uploaded_file is not None:
-    text = extract_text_from_pdf(uploaded_file)
-    
-    query = st.text_input("Apa yang ingin Bapak tanyakan tentang klausul SMK3?")
-    
-    if query:
-        # Pencarian sederhana berdasarkan kata kunci
-        if query.lower() in text.lower():
-            st.success("Informasi ditemukan!")
-            # Menampilkan potongan teks yang relevan
-            start_index = text.lower().find(query.lower())
-            st.write(text[start_index:start_index+500] + "...")
-        else:
-            st.warning("Mohon maaf, kata kunci tidak ditemukan dalam dokumen.")
+    # 1. Jika File adalah PDF
+    if uploaded_file.type == "application/pdf":
+        reader = PdfReader(uploaded_file)
+        text = "\n".join([page.extract_text() for page in reader.pages])
+        st.write("PDF berhasil dibaca. Masukkan pertanyaan Bapak:")
+        query = st.text_input("Pertanyaan:")
+        if query:
+            if query.lower() in text.lower():
+                st.success("Informasi ditemukan!")
+                st.write(text[text.lower().find(query.lower()):text.lower().find(query.lower())+500] + "...")
+            else:
+                st.warning("Kata kunci tidak ditemukan.")
 
-st.sidebar.info("Modul Minggu ke-1: Membaca standar secara otomatis.")
+    # 2. Jika File adalah Excel
+    elif uploaded_file.name.endswith(".xlsx"):
+        df = pd.read_excel(uploaded_file)
+        st.write("Data Excel berhasil dimuat:")
+        st.dataframe(df)
+        st.write("Statistik Data:", df.describe())
+
+    # 3. Jika File adalah CSV
+    elif uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+        st.write("Data CSV berhasil dimuat:")
+        st.dataframe(df)
+        st.write("Statistik Data:", df.describe())
+
 
    
     
