@@ -1,6 +1,3 @@
-# Menulis ulang file app.py dengan Fitur Upload CSV Riil Klien
-with open('app.py', 'w') as f:
-    f.write('''
 import streamlit as st
 import pandas as pd
 import numpy as np
