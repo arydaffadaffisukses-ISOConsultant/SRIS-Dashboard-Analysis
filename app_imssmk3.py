@@ -27,7 +27,7 @@ st.markdown("""
 st.markdown("""
     <div class='security-banner'>
         <h2>🛡️ SRIS Integrated Engine: ISO-IMS & SMK3 Dashboard</h2>
-        <p>Sistem Informasi Risiko Strategis | Otomatisasi Matriks Kepatuhan ISO 9001, ISO 14001, ISO 45001 & SMK3 PP 50/2012</p>
+        <p>Strategic Risk Intelligence System | Otomatisasi Matriks Kepatuhan ISO 9001, ISO 14001, ISO 45001 & SMK3 PP 50/2012</p>
     </div>
 """, unsafe_allow_html=True)
 
