@@ -88,9 +88,9 @@ if df is not None:
     
     kolom_dept = 'Departemen Divisi/Area'
     kolom_status = 'Posisi Status NC'
-    kolom_cyber = 'Cybersecurity Consepts'  # Disesuaikan dengan CSV asli 'Consepts'
-    kolom_pilar = 'Pillars Information Security'  # Kolom Baru CIA Triad
-    kolom_ops = 'Operational Capabilities'  # Kolom Baru Operational Capabilities
+    kolom_cyber = 'Cybersecurity Consepts'  # Sesuai data asli Bapak 'Consepts'
+    kolom_pilar = 'Pillars Information Security'
+    kolom_ops = 'Operational Capabilities'
     kolom_annex = 'Kategori Kontrol ( Annex A ) ISO 27001'
     kolom_auditor = 'Nama Auditor'
     kolom_standar = 'STANDARD'
@@ -106,7 +106,7 @@ if df is not None:
         }
         df[kolom_dept] = df[kolom_dept].replace(mapping_mr)
     
-    # PROSES EKSTRAKSI SKOR SKORING PENTAGON
+    # PROSES EKSTRAKSI SKOR PENTAGON
     pilar_skor = {
         'P1_Regulasi': 'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
         'P2_Finansial': 'Skoring Pentagon Analisis [P2- Finansial & Kerugian]',
@@ -196,152 +196,43 @@ if df_filtered is not None:
         col_g1, col_g2 = st.columns(2)
         with col_g1:
             st.write("##### 🏢 Distribusi Temuan Berdasarkan Departemen")
-            fig, ax = plt.subplots(figsize=(6, 3.5))
+            fig1, ax1 = plt.subplots(figsize=(6, 3.5))
             if kolom_dept in df_filtered.columns and not df_filtered[kolom_dept].isna().all():
-                df_filtered[kolom_dept].value_counts().sort_values(ascending=True).plot(kind='barh', color='#0a4b78', ax=ax)
+                df_filtered[kolom_dept].value_counts().sort_values(ascending=True).plot(kind='barh', color='#0a4b78', ax=ax1)
             plt.tight_layout()
-            st.pyplot(fig); plt.close(fig)
+            st.pyplot(fig1); plt.close(fig1)
         with col_g2:
             st.write("##### 🛡️ Profil Temuan Berdasarkan Cybersecurity Concepts")
-            fig, ax = plt.subplots(figsize=(6, 3.5))
+            fig2, ax2 = plt.subplots(figsize=(6, 3.5))
             if kolom_cyber in df_filtered.columns and not df_filtered[kolom_cyber].isna().all():
-                df_filtered[kolom_cyber].value_counts().plot(kind='bar', color='#00a8cc', edgecolor='black', ax=ax)
+                df_filtered[kolom_cyber].value_counts().plot(kind='bar', color='#00a8cc', edgecolor='black', ax=ax2)
                 plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
-            st.pyplot(fig); plt.close(fig)
+            st.pyplot(fig2); plt.close(fig2)
 
         # BARIS GRAFIK 2: INFORMATION SECURITY PILAR (CIA) & OPERATIONAL CAPABILITIES
         st.markdown("<br>", unsafe_allow_html=True)
         col_g3, col_g4 = st.columns(2)
         with col_g3:
             st.write("##### 🔑 Distribusi Berdasarkan Pillars Information Security (CIA)")
-            fig, ax = plt.subplots(figsize=(6, 3.5))
+            fig3, ax3 = plt.subplots(figsize=(6, 3.5))
             if kolom_pilar in df_filtered.columns and not df_filtered[kolom_pilar].isna().all():
-                # Memisahkan multi-value jika ada data seperti "Confidentiality, Integrity"
                 pilar_series = df_filtered[kolom_pilar].dropna().astype(str).str.split(',\s*').explode()
-                pilar_series.value_counts().plot(kind='bar', color='#4b86b4', edgecolor='black', ax=ax)
+                pilar_series.value_counts().plot(kind='bar', color='#4b86b4', edgecolor='black', ax=ax3)
                 plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
-            st.pyplot(fig); plt.close(fig)
+            st.pyplot(fig3); plt.close(fig3)
         with col_g4:
             st.write("##### ⚙️ Distribusi Berdasarkan Operational Capabilities")
-            fig, ax = plt.subplots(figsize=(6, 3.5))
+            fig4, ax4 = plt.subplots(figsize=(6, 3.5))
             if kolom_ops in df_filtered.columns and not df_filtered[kolom_ops].isna().all():
-                df_filtered[kolom_ops].value_counts().plot(kind='bar', color='#2a9d8f', edgecolor='black', ax=ax)
+                df_filtered[kolom_ops].value_counts().plot(kind='bar', color='#2a9d8f', edgecolor='black', ax=ax4)
                 plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
-            st.pyplot(fig); plt.close(fig)
+            st.pyplot(fig4); plt.close(fig4)
 
     elif menu == "🕸️ Analisis Radar Pentagon (SRIS Model)":
         st.subheader("🕸️ Pemetaan Profil Risiko Organisasi (Pentagon Model)")
         
         p1 = df_filtered['P1_Regulasi'].mean() if 'P1_Regulasi' in df_filtered.columns else 0
-        p2 = df_filtered['P2_Finansial'].mean() if 'P2_Finansial' in df_filtered.columns else 0
-        p3 = df_filtered['P3_Integritas'].mean() if 'P3_Integritas' in df_filtered.columns else 0
-        p4 = df_filtered['P4_Operasional'].mean() if 'P4_Operasional' in df_filtered.columns else 0
-        p5 = df_filtered['P5_Reputasi'].mean() if 'P5_Reputasi' in df_filtered.columns else 0
-        
-        scores = [p1, p2, p3, p4, p5]
-        categories = ['P1: Regulasi', 'P2: Finansial', 'P3: Integritas Data', 'P4: Operasional', 'P5: Reputasi']
-        categories_loop = categories + [categories[0]]; scores_loop = scores + [scores[0]]
-        angles = np.linspace(start=0, stop=2*np.pi, num=len(categories_loop))
-        
-        c_chart, c_narrative = st.columns([1.2, 1])
-        with c_chart:
-            fig_radar, ax_radar = plt.subplots(figsize=(5.5, 5.5), subplot_kw=dict(polar=True))
-            ax_radar.plot(angles, scores_loop, color='#00a8cc', linewidth=2.5, marker='o')
-            ax_radar.fill(angles, scores_loop, color='#00a8cc', alpha=0.3)
-            ax_radar.set_thetagrids(np.degrees(angles[:-1]), categories, fontsize=9, fontweight='bold')
-            ax_radar.set_ylim(0, 5); st.pyplot(fig_radar); plt.close(fig_radar)
-        with c_narrative:
-            st.write("##### 💡 Analisis Strategis Senior Management")
-            if sum(scores) > 0:
-                max_idx = np.argmax(scores)
-                st.error(f"**Pilar Kerentanan Utama:** Area **{categories[max_idx]}** menunjukkan nilai eksposur risiko tertinggi ({scores[max_idx]:.2f}/5.0).")
-            else:
-                st.info("Belum ada data nilai skor untuk departemen terpilih.")
-
-    elif menu == "🔍 Audit Deep Dive & Manajemen Annex A":
-        st.subheader("🛠️ Kelemahan Kontrol Berdasarkan Annex A ISO 27001")
-        fig_annex, ax_annex = plt.subplots(figsize=(10, 4.5))
-        if kolom_annex in df_filtered.columns and not df_filtered[kolom_annex].isna().all():
-            df_filtered[kolom_annex].value_counts().plot(kind='bar', color='#ff7e67', edgecolor='black', ax=ax_annex)
-        st.pyplot(fig_annex); plt.close(fig_annex)
-        
-        st.write("##### 🗂️ Tabel Inventori Temuan Audit")
-        kolom_tampilan = [kolom_auditor, kolom_dept, kolom_standar, kolom_temuan, kolom_status, kolom_no_annex]
-        st.dataframe(df_filtered[[c for c in kolom_tampilan if c in df_filtered.columns]], use_container_width=True)
-
-    elif menu == "🤖 SRIS Chatbot AI (Tanya Jawab Audit)":
-        st.subheader("🤖 SRIS Executive AI Consultant")
-        st.info("Asisten AI siap membantu Anda menganalisis temuan audit secara instan berbasis data & aspek Keamanan Informasi.")
-        
-        if "GEMINI_API_KEY" in st.secrets:
-            api_key_input = st.secrets["GEMINI_API_KEY"]
-        else:
-            api_key_input = st.text_input("🔑 Masukkan Google Gemini API Key Anda:", type="password")
-        
-        if api_key_input:
-            try:
-                from google import genai
-                client = genai.Client(api_key=api_key_input)
-                
-                if "chat_history" not in st.session_state:
-                    st.session_state.chat_history = []
-                
-                for chat in st.session_state.chat_history:
-                    if chat["role"] == "user":
-                        st.markdown(f"<div class='chat-bubble-user'>🧑‍💼 <b>Anda:</b> {chat['text']}</div>", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"<div class='chat-bubble-bot'>🤖 <b>SRIS AI:</b> {chat['text']}</div>", unsafe_allow_html=True)
-                
-                user_query = st.chat_input("Ketik pertanyaan audit Anda di sini...")
-                
-                if user_query:
-                    st.markdown(f"<div class='chat-bubble-user'>🧑‍💼 <b>Anda:</b> {user_query}</div>", unsafe_allow_html=True)
-                    
-                    kolom_ks = [kolom_dept, kolom_temuan, kolom_status, kolom_annex]
-                    kolom_tersedia = [c for c in kolom_ks if c in df_filtered.columns]
-                    ringkasan_data = df_filtered[kolom_tersedia].to_string(index=False) if kolom_tersedia else "Data kolom tidak sesuai."
-                    
-                    system_instruction = f"""
-                    Anda adalah SRIS Executive AI Consultant, seorang ahli strategi tata kelola keamanan informasi senior dan auditor ISO 27001:2022.
-                    Tugas Anda adalah menganalisis pertanyaan pengguna berbasis data audit berikut:
-                    
-                    --- DATA AUDIT AKTIF ---
-                    {ringkasan_data[:25000]}
-                    --- AKHIR DATA ---
-                    
-                    Setiap memberikan jawaban, Anda WAJIB menyertakan blok taksonomi keamanan informasi di bagian paling atas jawaban dengan format berikut:
-                    
-                    [TAG_ANALISIS]
-                    - Cybersecurity Concept: [Identify / Protect / Detect / Respond / Recover]
-                    - Pilar Security (CIA): [Confidentiality / Integrity / Availability]
-                    - Operational Capability: [Governance & Risk, Asset Management, Human Security, Physical Security, Technology Protection, Incident Management, Business Continuity]
-                    [AKHIR_TAG]
-                    
-                    Jawablah menggunakan Bahasa Indonesia profesional tingkat tinggi (Executive Level).
-                    """
-                    
-                    with st.spinner("Mengonfirmasi ke AI Cyber Security Engine..."):
-                        response = client.models.generate_content(
-                            model='gemini-2.5-flash',
-                            contents=user_query,
-                            config={'system_instruction': system_instruction}
-                        )
-                        bot_response = response.text
-                    
-                    if "[TAG_ANALISIS]" in bot_response:
-                        try:
-                            parts = bot_response.split("[AKHIR_TAG]")
-                            tag_part = parts[0].replace("[TAG_ANALISIS]", "").strip()
-                            isi_jawaban = parts[1].strip()
-                            
-                            st.markdown("##### 🛡️ Klasifikasi Risiko & Kapabilitas Keamanan:")
-                            lines = tag_part.split("\n")
-                            c1, c2, c3 = st.columns(3)
-                            with c1:
-                                val_cyber = next((line.split(":")[1].strip() for line in lines if "Cybersecurity Concept" in line), "Identify")
-                                st.metric("Cybersecurity Concept", val_cyber)
-                            with c2:
-                                val_cia = next((line.split(":")[1].strip() for line in lines if "Pilar
+        p2 = df_filtered['P2_Finansial'].mean() if 'P2
