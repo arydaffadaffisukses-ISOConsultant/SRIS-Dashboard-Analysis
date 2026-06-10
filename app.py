@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from pypdf import PdfReader
 
-st.title("SMK3 Clause & Data Advisor")
+st.title("SRIS Engine Data Advisor")
 
 uploaded_file = st.file_uploader("Upload Dokumen (PDF, Excel, atau CSV)", type=["pdf", "xlsx", "csv"])
 
