@@ -26,7 +26,7 @@ st.markdown("""
 
 st.markdown("""
     <div class='security-banner'>
-        <h2>🛡️ SRIS Integrated Multi-Engine: ISO-IMS & SMK3 Dashboard</h2>
+        <h2>🛡️ SRIS Integrated Engine: ISO-IMS & SMK3 Dashboard</h2>
         <p>Sistem Informasi Risiko Strategis | Otomatisasi Matriks Kepatuhan ISO 9001, ISO 14001, ISO 45001 & SMK3 PP 50/2012</p>
     </div>
 """, unsafe_allow_html=True)
@@ -164,7 +164,7 @@ if df_filtered is not None:
         
         col_g1, col_g2 = st.columns(2)
         with col_g1:
-            st.write("##### Distribusi Temuan Pelanggaran per Departemen/Area")
+            st.write("##### Temuan Ketidaksesuaian per Departemen/Area")
             fig1, ax1 = plt.subplots(figsize=(6, 3.5))
             if kolom_dept in df_filtered.columns:
                 df_filtered[kolom_dept].value_counts().sort_values(ascending=True).plot(kind='barh', color='#1e5631', ax=fig1.gca())
@@ -172,7 +172,7 @@ if df_filtered is not None:
             st.pyplot(fig1)
             plt.close(fig1)
         with col_g2:
-            st.write("##### Breakdown Volume Berdasarkan Kriteria Kepatuhan")
+            st.write("##### Jumlah Temuan berdasarkan Kriteria Standard")
             fig2, ax2 = plt.subplots(figsize=(6, 3.5))
             kolom_kriteria_aktif = 'Nomor Kriteria' if 'Nomor Kriteria' in df_filtered.columns else \
                                   ('Nomor Kriteria ' if 'Nomor Kriteria ' in df_filtered.columns else kolom_standar)
@@ -215,11 +215,11 @@ if df_filtered is not None:
                 st.info("Belum ada data nilai skor untuk pemetaan pentagon.")
 
     elif current_menu == "DeepDive":
-        st.subheader("🔍 Deep Dive Klausul Kepatuhan Regulasi")
+        st.subheader("🔍 Penelaahan Mendalam Klausul Kepatuhan Standard/Regulasi")
         kolom_kriteria_umum = 'Nomor Kriteria' if 'Nomor Kriteria' in df_filtered.columns else \
                               ('Nomor Kriteria ' if 'Nomor Kriteria ' in df_filtered.columns else kolom_standar)
         
-        st.write("##### Pemetaan Volume Ketidaksesuaian Berdasarkan Klausul / Kriteria")
+        st.write("##### Pemetaan Jumlah Ketidaksesuaian Berdasarkan Klausul / Kriteria")
         fig_klausul, ax_klausul = plt.subplots(figsize=(10, 3.8))
         if kolom_kriteria_umum in df_filtered.columns:
             df_filtered[kolom_kriteria_umum].value_counts().head(15).plot(kind='bar', color='#4b86b4', edgecolor='black', ax=fig_klausul.gca())
@@ -262,7 +262,7 @@ if df_filtered is not None:
                     
                     system_instruction = f"""
                     Anda adalah Senior Management Consultant & Auditor Utama bersertifikasi ISO 9001, 14001, 45001, dan SMK3 PP 50/2012.
-                    Tugas Anda membantu merumuskan akar masalah dan menyusun Rekomendasi Tindakan Perbaikan (CAPA) level Eksekutif.
+                    Tugas Anda membantu merumuskan akar masalah dan menyusun Rekomendasi Tindakan Perbaikan (CAPA) untuk Level Operasional dan level Eksekutif.
                     
                     --- MODE OPERASI SAAT INI ---
                     {sris_mode}
