@@ -114,7 +114,7 @@ if df is not None:
         else:
             sris_mode = "ISO-IMS"
 
-    # PROSES EKSTRAKSI SKOR PENTAGON RISK MAP (DIBUAT RINGKAS / ANTI-TRUNCATE)
+    # PROSES EKSTRAKSI SKOR PENTAGON RISK MAP (KODE PENDEK & AMAN)
     pilar_skor = {
         'P1_Regulasi': 'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
         'P2_Finansial': 'Skoring Pentagon Analisis [P2- Finansial & Kerugian]',
@@ -125,7 +125,6 @@ if df is not None:
     
     for key, nama_kolom in pilar_skor.items():
         if nama_kolom in df.columns:
-            # Dipecah menjadi 3 baris pendek agar tidak terpotong di GitHub
             teks_kolom = df[nama_kolom].astype(str)
             angka_ekstrak = teks_kolom.str.extract(r'(\d+)')[0]
             df[key] = pd.to_numeric(angka_ekstrak, errors='coerce').fillna(0.0)
@@ -221,46 +220,3 @@ if df_filtered is not None:
                 st.write("##### Distribusi Pillars Information Security (CIA)")
                 fig3, ax3 = plt.subplots(figsize=(6, 3.5))
                 pilar_series = df_filtered[kolom_pilar].dropna().astype(str).str.split(',\s*').explode()
-                pilar_series.value_counts().plot(kind='bar', color='#4b86b4', edgecolor='black', ax=ax3)
-                plt.xticks(rotation=45, ha='right')
-                plt.tight_layout()
-                st.pyplot(fig3)
-                plt.close(fig3)
-            with col_g4:
-                st.write("##### Distribusi Berdasarkan Operational Capabilities")
-                fig4, ax4 = plt.subplots(figsize=(6, 3.5))
-                df_filtered[kolom_ops].value_counts().plot(kind='bar', color='#2a9d8f', edgecolor='black', ax=ax4)
-                plt.xticks(rotation=45, ha='right')
-                plt.tight_layout()
-                st.pyplot(fig4)
-                plt.close(fig4)
-        else:
-            # INTERFACE DINAMIS UNTUK SMK3 / STANDAR LAIN
-            col_g1, col_g2 = st.columns(2)
-            with col_g1:
-                st.write("##### Distribusi Temuan Pelanggaran per Departemen/Area")
-                fig1, ax1 = plt.subplots(figsize=(6, 3.5))
-                if kolom_dept in df_filtered.columns:
-                    df_filtered[kolom_dept].value_counts().sort_values(ascending=True).plot(kind='barh', color='#1e5631', ax=ax1)
-                plt.tight_layout()
-                st.pyplot(fig1)
-                plt.close(fig1)
-            with col_g2:
-                st.write("##### Breakdown Volume Berdasarkan Standar / Kriteria Regulasi")
-                fig2, ax2 = plt.subplots(figsize=(6, 3.5))
-                kolom_kriteria_aktif = 'Nomor Kriteria' if 'Nomor Kriteria' in df_filtered.columns else \
-                                      ('Nomor Kriteria ' if 'Nomor Kriteria ' in df_filtered.columns else kolom_standar)
-                if kolom_kriteria_aktif in df_filtered.columns:
-                    df_filtered[kolom_kriteria_aktif].value_counts().head(10).plot(kind='bar', color='#4c9a2a', edgecolor='black', ax=ax2)
-                    plt.xticks(rotation=45, ha='right')
-                plt.tight_layout()
-                st.pyplot(fig2)
-                plt.close(fig2)
-
-    elif menu == "🕸️ Analisis Radar Pentagon (SRIS Model)":
-        st.subheader("Pemetaan Profil Risiko Organisasi (Pentagon Model)")
-        
-        p1 = df_filtered['P1_Regulasi'].mean() if 'P1_Regulasi' in df_filtered.columns else 0
-        p2 = df_filtered['P2_Finansial'].mean() if 'P2_Finansial' in df_filtered.columns else 0
-        p3 = df_filtered['P3_Integritas'].mean() if 'P3_Integritas' in df_filtered.columns else 0
-        p4 = df_filtered['P4_Operasional'].mean() if 'P4_Operasional'
