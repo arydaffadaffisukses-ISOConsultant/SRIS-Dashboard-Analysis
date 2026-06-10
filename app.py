@@ -53,40 +53,45 @@ kolom_no_annex = 'No Annex dan No Control ( ISO 27001)'
 st.sidebar.header("📂 Sumber Data Audit")
 uploaded_file = st.sidebar.file_uploader("Unggah File CSV/XLSX Hasil Audit:", type=["csv", "xlsx"])
 
-df = None
+# Inisialisasi awal session state agar tidak hilang saat pindah menu
+if 'df' not in st.session_state:
+    st.session_state['df'] = None
+if 'sris_mode' not in st.session_state:
+    st.session_state['sris_mode'] = "ISO-IMS"
+
+df_input = None
 status_pembacaan = ""
 
 if uploaded_file is not None:
     try:
         if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
+            df_input = pd.read_csv(uploaded_file)
         else:
-            df = pd.read_excel(uploaded_file)
+            df_input = pd.read_excel(uploaded_file)
         status_pembacaan = f"Berhasil memuat file unggahan: {uploaded_file.name}"
     except Exception as e:
         st.sidebar.error(f"Gagal membaca file unggahan: {e}")
 
-if df is None:
+if df_input is None:
     for file in os.listdir('.'):
         if (file.endswith('.csv') or file.endswith('.xlsx')) and file != 'app.py' and "Simulasi" not in file:
             if any(kunci in file for kunci in ["Formulir", "Responses", "Jawaban", "kompilasi", "smk3", "iso"]):
                 try:
                     if file.endswith('.csv'):
-                        df = pd.read_csv(file)
+                        df_input = pd.read_csv(file)
                     else:
-                        df = pd.read_excel(file)
+                        df_input = pd.read_excel(file)
                     status_pembacaan = f"Otomatis mendeteksi file workspace: {file}"
                     break
                 except:
                     pass
 
-# ==========================================
-# 4. CORE PROCESSING ENGINE & ENGINE DETECTOR
-# ==========================================
-df_filtered = None
-sris_mode = "ISO-IMS" 
+if df_input is not None:
+    st.session_state['df'] = df_input
 
-if df is not None:
+# Cek apakah data tersedia di session state
+if st.session_state['df'] is not None:
+    df = st.session_state['df'].copy()
     df.columns = [col.strip() for col in df.columns]
     
     # Standardisasi Data Departemen
@@ -99,22 +104,22 @@ if df is not None:
         }
         df[kolom_dept] = df[kolom_dept].replace(mapping_mr)
     
-    # SMART STANDAR DETECTOR (Mendeteksi otomatis isi file)
+    # SMART STANDAR DETECTOR
     if kolom_standar in df.columns:
         sample_standar = "".join(df[kolom_standar].dropna().astype(str).unique()).upper()
         if "SMK3" in sample_standar or "PP 50" in sample_standar or "K3" in sample_standar:
-            sris_mode = "SMK3"
+            st.session_state['sris_mode'] = "SMK3"
         elif "27001" in sample_standar:
-            sris_mode = "ISO-27001"
+            st.session_state['sris_mode'] = "ISO-27001"
         else:
-            sris_mode = "ISO-IMS"
+            st.session_state['sris_mode'] = "ISO-IMS"
     else:
         if kolom_cyber in df.columns:
-            sris_mode = "ISO-27001"
+            st.session_state['sris_mode'] = "ISO-27001"
         else:
-            sris_mode = "ISO-IMS"
+            st.session_state['sris_mode'] = "ISO-IMS"
 
-    # PROSES EKSTRAKSI SKOR PENTAGON RISK MAP (KODE PENDEK & AMAN)
+    # PROSES EKSTRAKSI SKOR PENTAGON RISK MAP
     pilar_skor = {
         'P1_Regulasi': 'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
         'P2_Finansial': 'Skoring Pentagon Analisis [P2- Finansial & Kerugian]',
@@ -131,6 +136,7 @@ if df is not None:
         else:
             df[key] = 0.0
 
+    sris_mode = st.session_state['sris_mode']
     st.sidebar.success(f"🔌 Status Data: Terhubung ({sris_mode} Mode)")
     st.sidebar.info(f"ℹ️ {status_pembacaan}")
     
@@ -144,29 +150,32 @@ if df is not None:
             df_filtered = df.copy()
     else:
         df_filtered = df.copy()
-
-    st.session_state['df_filtered_saved'] = df_filtered
-    st.session_state['df'] = df
-    st.session_state['sris_mode'] = sris_mode
+else:
+    df_filtered = None
+    sris_mode = "ISO-IMS"
 
 # ==========================================
-# 5. MENU NAVIGASI UTAMA
+# 4. MENU NAVIGASI UTAMA (MENGGUNAKAN MAP DI BACKEND)
 # ==========================================
-menu = st.sidebar.radio("Pilih Navigasi Dashboard:", [
-    "📊 Ringkasan Eksekutif & Status Temuan",
-    "🕸️ Analisis Radar Pentagon (SRIS Model)",
-    "🔍 Audit Deep Dive & Kepatuhan Klausul",
-    "🤖 SRIS Chatbot AI (Tanya Jawab Audit)"
-])
+menu_options = {
+    "Ringkasan": "📊 Ringkasan Eksekutif & Status Temuan",
+    "Pentagon": "🕸️ Analisis Radar Pentagon (SRIS Model)",
+    "DeepDive": "🔍 Audit Deep Dive & Kepatuhan Klausul",
+    "Chatbot": "🤖 SRIS Chatbot AI (Tanya Jawab Audit)"
+}
 
-if 'df_filtered_saved' in st.session_state:
-    df_filtered = st.session_state['df_filtered_saved']
-    sris_mode = st.session_state['sris_mode']
+# Tampilkan visual dengan emoji utuh ke user
+selected_menu_label = st.sidebar.radio("Pilih Navigasi Dashboard:", list(menu_options.values()))
 
-# Eksekusi Tampilan Dashboard
+# Identifikasi key menu di backend agar aman dari gangguan pemotongan string/emoji
+current_menu = [k for k, v in menu_options.items() if v == selected_menu_label][0]
+
+# ==========================================
+# 5. EKSEKUSI TAMPILAN DASHBOARD BERDASARKAN MENU
+# ==========================================
 if df_filtered is not None:
 
-    if menu == "📊 Ringkasan Eksekutif & Status Temuan":
+    if current_menu == "Ringkasan":
         st.subheader(f"Metrik Utama Hasil Audit - Mode: {sris_mode}")
         total_temuan = len(df_filtered)
         if kolom_status in df_filtered.columns:
@@ -191,10 +200,8 @@ if df_filtered is not None:
             
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # LOGIKA DYNAMIC RENDERING (CEK KOLOM SIBER)
-        has_cyber_cols = (kolom_cyber in df_filtered.columns and not df_filtered[kolom_cyber].isna().all()) and \
-                         (kolom_pilar in df_filtered.columns and not df_filtered[kolom_pilar].isna().all()) and \
-                         (kolom_ops in df_filtered.columns and not df_filtered[kolom_ops].isna().all())
+        # Deteksi validitas isi kolom siber
+        has_cyber_cols = (kolom_cyber in df_filtered.columns and not df_filtered[kolom_cyber].isna().all())
 
         if has_cyber_cols:
             col_g1, col_g2 = st.columns(2)
@@ -219,4 +226,40 @@ if df_filtered is not None:
             with col_g3:
                 st.write("##### Distribusi Pillars Information Security (CIA)")
                 fig3, ax3 = plt.subplots(figsize=(6, 3.5))
-                pilar_series = df_filtered[kolom_pilar].dropna().astype(str).str.split(',\s*').explode()
+                if kolom_pilar in df_filtered.columns:
+                    pilar_series = df_filtered[kolom_pilar].dropna().astype(str).str.split(',\s*').explode()
+                    pilar_series.value_counts().plot(kind='bar', color='#4b86b4', edgecolor='black', ax=ax3)
+                    plt.xticks(rotation=45, ha='right')
+                plt.tight_layout()
+                st.pyplot(fig3)
+                plt.close(fig3)
+            with col_g4:
+                st.write("##### Distribusi Berdasarkan Operational Capabilities")
+                fig4, ax4 = plt.subplots(figsize=(6, 3.5))
+                if kolom_ops in df_filtered.columns:
+                    df_filtered[kolom_ops].value_counts().plot(kind='bar', color='#2a9d8f', edgecolor='black', ax=ax4)
+                    plt.xticks(rotation=45, ha='right')
+                plt.tight_layout()
+                st.pyplot(fig4)
+                plt.close(fig4)
+        else:
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                st.write("##### Distribusi Temuan Pelanggaran per Departemen/Area")
+                fig1, ax1 = plt.subplots(figsize=(6, 3.5))
+                if kolom_dept in df_filtered.columns:
+                    df_filtered[kolom_dept].value_counts().sort_values(ascending=True).plot(kind='barh', color='#1e5631', ax=ax1)
+                plt.tight_layout()
+                st.pyplot(fig1)
+                plt.close(fig1)
+            with col_g2:
+                st.write("##### Breakdown Volume Berdasarkan Standar / Kriteria Regulasi")
+                fig2, ax2 = plt.subplots(figsize=(6, 3.5))
+                kolom_kriteria_aktif = 'Nomor Kriteria' if 'Nomor Kriteria' in df_filtered.columns else \
+                                      ('Nomor Kriteria ' if 'Nomor Kriteria ' in df_filtered.columns else kolom_standar)
+                if kolom_kriteria_aktif in df_filtered.columns:
+                    df_filtered[kolom_kriteria_aktif].value_counts().head(10).plot(kind='bar', color='#4c9a2a', edgecolor='black', ax=ax2)
+                    plt.xticks(rotation=45, ha='right')
+                plt.tight_layout()
+                st.pyplot(fig2)
+                plt.close(fig2
