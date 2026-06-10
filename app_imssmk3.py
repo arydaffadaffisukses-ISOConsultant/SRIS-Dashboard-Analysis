@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # ==========================================
 # 1. KONFIGURASI HALAMAN UTAMA DASHBOARD
 # ==========================================
-st.set_page_config(page_title="SRIS IMS & SMK3 Dashboard", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="SRIS Engine Dashboard", layout="wide", page_icon="🛡️")
 
 # Desain Tema Premium Corporate Executive (HSE Green & Deep Slate)
 st.markdown("""
