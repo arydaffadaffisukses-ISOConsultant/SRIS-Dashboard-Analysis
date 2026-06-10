@@ -145,4 +145,80 @@ if df is not None:
 
     st.session_state['df_filtered_saved'] = df_filtered
     st.session_state['df'] = df
-    st.
+    st.session_state['sris_mode'] = sris_mode
+
+# ==========================================
+# 5. MENU NAVIGASI UTAMA
+# ==========================================
+menu = st.sidebar.radio("Pilih Navigasi Dashboard:", [
+    "📊 Ringkasan Eksekutif & Status Temuan",
+    "🕸️ Analisis Radar Pentagon (SRIS Model)",
+    "🔍 Audit Deep Dive & Kepatuhan Klausul",
+    "🤖 SRIS Chatbot AI (Tanya Jawab Audit)"
+])
+
+if 'df_filtered_saved' in st.session_state:
+    df_filtered = st.session_state['df_filtered_saved']
+    sris_mode = st.session_state['sris_mode']
+
+# Eksekusi Tampilan Dashboard
+if df_filtered is not None:
+
+    if menu == "📊 Ringkasan Eksekutif & Status Temuan":
+        st.subheader(f"📊 Metrik Utama Hasil Audit - Mode: {sris_mode}")
+        total_temuan = len(df_filtered)
+        if kolom_status in df_filtered.columns:
+            open_nc = len(df_filtered[df_filtered[kolom_status].astype(str).str.contains('Open|On Progress', case=False, na=False)])
+            closed_nc = total_temuan - open_nc
+        else:
+            open_nc = total_temuan; closed_nc = 0
+            
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
+            st.metric(label="Total Temuan Kasus", value=f"{total_temuan} Temuan")
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
+            st.metric(label="Status Open / Process", value=f"{open_nc} Kasus", delta="Risk Exposure", delta_color="inverse")
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c3:
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
+            st.metric(label="Status Closed (Selesai)", value=f"{closed_nc} Kasus", delta="Mitigated")
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # LOGIKA CEK KOLOM CYBER SECURITY SEBELUM MENAMPILKAN GRAFIK
+        has_cyber_cols = (kolom_cyber in df_filtered.columns and not df_filtered[kolom_cyber].isna().all()) and \
+                         (kolom_pilar in df_filtered.columns and not df_filtered[kolom_pilar].isna().all()) and \
+                         (kolom_ops in df_filtered.columns and not df_filtered[kolom_ops].isna().all())
+
+        if has_cyber_cols:
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                st.write("##### 🏢 Distribusi Temuan Berdasarkan Departemen")
+                fig1, ax1 = plt.subplots(figsize=(6, 3.5))
+                df_filtered[kolom_dept].value_counts().sort_values(ascending=True).plot(kind='barh', color='#0a4b78', ax=ax1)
+                plt.tight_layout()
+                st.pyplot(fig1); plt.close(fig1)
+            with col_g2:
+                st.write("##### 🛡️ Profil Temuan Berdasarkan Cybersecurity Concepts")
+                fig2, ax2 = plt.subplots(figsize=(6, 3.5))
+                df_filtered[kolom_cyber].value_counts().plot(kind='bar', color='#00a8cc', edgecolor='black', ax=ax2)
+                plt.xticks(rotation=45, ha='right')
+                plt.tight_layout()
+                st.pyplot(fig2); plt.close(fig2)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            col_g3, col_g4 = st.columns(2)
+            with col_g3:
+                st.write("##### 🔑 Distribusi Pillars Information Security (CIA)")
+                fig3, ax3 = plt.subplots(figsize=(6, 3.5))
+                pilar_series = df_filtered[kolom_pilar].dropna().astype(str).str.split(',\s*').explode()
+                pilar_series.value_counts().plot(kind='bar', color='#4b86b4', edgecolor='black', ax=ax3)
+                plt.xticks(rotation=45, ha='right')
+                plt.tight_layout()
+                st.pyplot(fig3); plt.close(fig3)
+            with col_g4:
+                st.write("#####
