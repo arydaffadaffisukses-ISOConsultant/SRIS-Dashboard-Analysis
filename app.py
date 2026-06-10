@@ -27,8 +27,21 @@ elif menu == "🤖 SRIS Chatbot AI (Tanya Jawab Audit)":
                 if user_query:
                     st.markdown(f"<div class='chat-bubble-user'>🧑‍💼 <b>Anda:</b> {user_query}</div>", unsafe_allow_html=True)
                     
-                    kolom_ks = [kolom_dept, kolom_temuan, kolom_status, kolom_annex]
-                    ringkasan_data = df_filtered[[c for c in kolom_ks if c in df_filtered.columns]].to_string(index=False)
+                    # DEFINISI ULANG KOLOM SECARA LOKAL AGAR AMAN DARI NAMEERROR
+                    k_dept = 'Departemen Divisi/Area'
+                    k_temuan = 'Detail Temuan Ketidaksesuaian'
+                    k_status = 'Posisi Status NC'
+                    k_annex = 'Kategori Kontrol ( Annex A ) ISO 27001'
+                    
+                    kolom_ks = [k_dept, k_temuan, k_status, k_annex]
+                    
+                    # Filter hanya kolom yang benar-benar ada di data dataframe Bapak
+                    kolom_tersedia = [c for c in kolom_ks if c in df_filtered.columns]
+                    
+                    if kolom_tersedia:
+                        ringkasan_data = df_filtered[kolom_tersedia].to_string(index=False)
+                    else:
+                        ringkasan_data = "Data tersedia tetapi nama kolom standar tidak cocok."
                     
                     # SYSTEM PROMPT DIOPTIMALKAN UNTUK STRATEGIC CYBERSECURITY & CIA TRIAD
                     system_instruction = f"""
@@ -36,10 +49,10 @@ elif menu == "🤖 SRIS Chatbot AI (Tanya Jawab Audit)":
                     Tugas Anda adalah menganalisis pertanyaan pengguna berbasis data audit berikut:
                     
                     --- DATA AUDIT AKTIF ---
-                    {ringkasan_data}
+                    {ringkasan_data[:25000]}
                     --- AKHIR DATA ---
                     
-                    Setiap memberikan jawaban atau analisis tata kelola/temuan, Anda WAJIB menyertakan blok taksonomi keamanan informasi di bagian paling atas jawaban Anda dengan format baku JSON atau Teks Terstruktur berikut:
+                    Setiap memberikan jawaban atau analisis tata kelola/temuan, Anda WAJIB menyertakan blok taksonomi keamanan informasi di bagian paling atas jawaban Anda dengan format baku Teks Terstruktur berikut:
                     
                     [TAG_ANALISIS]
                     - Cybersecurity Concept: [Pilih salah satu atau lebih: Identify / Protect / Detect / Respond / Recover]
@@ -61,25 +74,33 @@ elif menu == "🤖 SRIS Chatbot AI (Tanya Jawab Audit)":
                         bot_response = response.text
                     
                     # LOGIKA PARSING STRATEGIS UNTUK MENAMPILKAN METRIK SECARA VISUAL DI STREAMLIT
-                    # Memisahkan Tag Analisis agar bisa ditampilkan dalam box visual premium
                     if "[TAG_ANALISIS]" in bot_response:
                         try:
                             parts = bot_response.split("[AKHIR_TAG]")
                             tag_part = parts[0].replace("[TAG_ANALISIS]", "").strip()
                             isi_jawaban = parts[1].strip()
                             
-                            # Tampilkan Box Metrik Atas
                             st.markdown("##### 🛡️ Klasifikasi Risiko & Kapabilitas Keamanan:")
                             lines = tag_part.split("\n")
+                            
                             c1, c2, c3 = st.columns(3)
                             with c1:
-                                val_cyber = next((line.split(":")[1].strip() for line in lines if "Cybersecurity Concept" in line), "N/A")
+                                val_cyber = "Identify"
+                                for line in lines:
+                                    if "Cybersecurity Concept" in line and ":" in line:
+                                        val_cyber = line.split(":")[1].strip()
                                 st.metric("Cybersecurity Concept", val_cyber)
                             with c2:
-                                val_cia = next((line.split(":")[1].strip() for line in lines if "Pilar Security (CIA)" in line), "N/A")
+                                val_cia = "Integrity"
+                                for line in lines:
+                                    if "Pilar Security (CIA)" in line and ":" in line:
+                                        val_cia = line.split(":")[1].strip()
                                 st.metric("Pilar Security (CIA)", val_cia)
                             with c3:
-                                val_op = next((line.split(":")[1].strip() for line in lines if "Operational Capability" in line), "N/A")
+                                val_op = "Governance & Risk"
+                                for line in lines:
+                                    if "Operational Capability" in line and ":" in line:
+                                        val_op = line.split(":")[1].strip()
                                 st.metric("Operational Capability", val_op)
                                 
                             st.markdown(f"<div class='chat-bubble-bot'>🤖 <b>SRIS AI:</b><br><br>{isi_jawaban}</div>", unsafe_allow_html=True)
@@ -95,4 +116,3 @@ elif menu == "🤖 SRIS Chatbot AI (Tanya Jawab Audit)":
                 st.error(f"Gagal menghubungkan ke AI Engine: {error_ai}")
         else:
             st.warning("⚠️ Silakan masukkan Gemini API Key Anda terlebih dahulu untuk mengaktifkan fungsi Chatbot AI.")
-    
