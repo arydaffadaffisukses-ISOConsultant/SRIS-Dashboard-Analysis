@@ -29,10 +29,14 @@ if uploaded_file:
             dep_col = next((c for c in df.columns if "Departemen" in c), df.columns[3])
             fig_bar = px.bar(df[dep_col].value_counts().reset_index(), x=dep_col, y='count', title="Jumlah Temuan per Departemen")
             st.plotly_chart(fig_bar, use_container_width=True)
-        with c2:
-            posisi_col = next((c for c in df.columns if "Posisi" in c), None)
-            if posisi_col:
-                st.plotly_chart(px.bar(df[posisi_col].value_counts().reset_index(), x=posisi_col, y='count', title="Kerugian tiap departemen"), use_container_width=True)
+        with col2:
+            # Estimasi Kerugian (Mencari kolom yang mengandung kata 'Kerugian')
+            loss_col = next((c for c in df.columns if "Kerugian" in c or "Finansial" in c), None)
+            if loss_col:
+                fig_loss = px.pie(df, values=loss_col, names=dep_col, title="Estimasi Kerugian Finansial per Departemen")
+                st.plotly_chart(fig_loss, use_container_width=True)
+            else:
+                st.warning("Kolom 'Estimasi Kerugian' tidak ditemukan.")
 
     with tab2:
         st.subheader("Pentagon Maturity & Risk Treatment")
