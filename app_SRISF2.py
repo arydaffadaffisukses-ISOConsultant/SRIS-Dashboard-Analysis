@@ -36,8 +36,26 @@ fig3, ax3 = plt.subplots()
 sns.barplot(data=maturity_df, x='Departemen', y='Maturity_Score', hue='Departemen', palette='magma', legend=False, ax=ax3)
 ax3.set_title('Risk Maturity Index')
 
-fig4, ax4 = plt.subplots(subplot_kw={'projection': 'polar'})
-# ... (masukkan kode radar chart Bapak di sini)
+# Definisi label dengan tambahan P1-P5
+labels = ['P1: Regulasi', 'P2: Finansial', 'P3: Integritas Data', 'P4: Operasional', 'P5: Reputasi']
+values = [get_dimensi_score(cat) for cat in ['Regulasi', 'Finansial', 'Integritas Data', 'Operasional', 'Reputasi']]
+
+# Pastikan values menutup lingkaran
+values += values[:1]
+angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False).tolist()
+angles += angles[:1]
+
+fig4, ax4 = plt.subplots(figsize=(6, 6), subplot_kw={'projection': 'polar'})
+ax4.fill(angles, values, color='teal', alpha=0.25)
+ax4.plot(angles, values, color='teal', linewidth=2)
+
+# Mengatur label P1-P5
+ax4.set_xticks(angles[:-1])
+ax4.set_xticklabels(labels, size=10, fontweight='bold')
+ax4.set_title('Pentagon Analisis (Dimensi Risiko)', pad=20, fontsize=12)
+
+# Menambah jarak agar tidak mepet
+ax4.tick_params(axis='x', pad=15)
 
 # 4. Tampilkan di Streamlit
 col1, col2 = st.columns(2)
