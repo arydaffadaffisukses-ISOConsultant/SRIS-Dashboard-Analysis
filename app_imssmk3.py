@@ -299,8 +299,7 @@ with col1:
                     system_instruction = f"""
 # Anda adalah Senior Management Consultant & Auditor Utama bersertifikasi ISO 9001, 14001, 45001, dan SMK3 PP 50/2012.
 # Tugas Anda membantu merumuskan akar masalah dan menyusun Rekomendasi Tindakan Perbaikan (CAPA) untuk Level Operasional.
-                    
-                    --- MODE OPERASI SAAT INI ---
+# --- MODE OPERASI SAAT INI ---
                     {sris_mode}
                     
                     --- DATA AUDIT AKTIF ---
