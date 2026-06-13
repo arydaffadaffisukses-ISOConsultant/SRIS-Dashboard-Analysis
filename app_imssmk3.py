@@ -18,12 +18,17 @@ if uploaded_file:
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
     with tab1:
-        st.subheader("Monitoring Temuan & Status")
-        c1, c2 = st.columns(2)
-        with c1:
-            status_col = next((c for c in df.columns if "Status" in c), None)
-            if status_col:
-                st.plotly_chart(px.pie(df, names=status_col, title="Temuan tiap departemen"), use_container_width=True)
+      menu = st.sidebar.radio("Pilih Analisis", ["Executive Summary", "Pentagon & Risk Treatment"])
+
+    if menu == "Executive Summary":
+        st.subheader("Distribusi Temuan & Estimasi Kerugian")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            # Cari kolom departemen
+            dep_col = next((c for c in df.columns if "Departemen" in c), df.columns[3])
+            fig_bar = px.bar(df[dep_col].value_counts().reset_index(), x=dep_col, y='count', title="Jumlah Temuan per Departemen")
+            st.plotly_chart(fig_bar, use_container_width=True)
         with c2:
             posisi_col = next((c for c in df.columns if "Posisi" in c), None)
             if posisi_col:
