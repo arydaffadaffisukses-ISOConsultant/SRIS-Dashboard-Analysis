@@ -1,77 +1,76 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import streamlit as st
+# Konfigurasi Halaman
+st.set_page_config(page_title="SRIS Pro Dashboard", layout="wide")
 
-# 1. Konfigurasi Sidebar
+# Sidebar - Unggah Data
 st.sidebar.header("📁 Sumber Data Audit")
-
-# 2. Upload File (File Uploader)
-uploaded_file = st.sidebar.file_uploader(
-    "Unggah File Hasil Audit (IMS/SMK3):", 
-    type=["csv", "xlsx"], 
-    help="Maksimal 200MB per file"
-)
-
-# 3. Menambahkan keterangan ukuran file
+uploaded_file = st.sidebar.file_uploader("Unggah File (CSV/XLSX):", type=["csv", "xlsx"])
 st.sidebar.caption("200MB per file • CSV, XLSX")
 
-st.sidebar.markdown("---") # Garis pembatas
-
-# 4. Navigasi Dashboard (Radio Buttons dengan Icon)
+st.sidebar.markdown("---")
 st.sidebar.header("Pilih Navigasi Dashboard:")
-navigasi = st.sidebar.radio(
-    "", # Label dikosongkan karena sudah ada header di atas
-    options=[
-        "📊 Executive Summary & Status Temuan",
-        "🕸️ Analisis Radar Pentagon (SRIS Model)",
-        "🔍 Maturity Analysis",
-        "🤖 SRIS Management AI Consultant"
-    ]
-)
+nav = st.sidebar.radio("", [
+    "📊 Executive Summary & Status Temuan",
+    "📈 Risk Maturity Analysis & Pentagon",
+    "🤖 SRIS Management AI Consultant"
+])
 
-# 5. Logika Navigasi
-if navigasi == "📊 Executive Summary & Status Temuan":
-    st.title("Executive Summary")
-    # Panggil fungsi dashboard utama Anda di sini
-elif navigasi == "🕸️ Analisis Radar Pentagon (SRIS Model)":
-    st.title("Analisis Pentagon")
-    # Panggil fungsi radar chart Anda di sini
-# ... dan seterusnya
-
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    
-    # Menampilkan DataFrame agar Bapak tahu apakah data terbaca
-    st.write("### Data Preview", df.head())
-
-    # --- GRAFIK TEMUAN PER DEPARTEMEN ---
-    st.subheader("📊 Temuan per Departemen")
-    fig1, ax1 = plt.subplots()
-    # Menggunakan kolom 'Departemen' sesuai data Bapak
-    df['Departemen'].value_counts().plot(kind='bar', color='#1e5631', ax=ax1)
-    st.pyplot(fig1)
-    import plotly.graph_objects as go
-
-def plot_radar_chart(df):
-    # Mengasumsikan data memiliki kolom skor 1-5 untuk 5 pilar
+# Fungsi Radar Chart Pentagon
+def plot_radar(df):
     categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
-    # Rata-rata skor per kategori
-    values = [df['P1_Regulasi'].mean(), df['P2_Finansial'].mean(), 
-              df['P3_Integritas'].mean(), df['P4_Operasional'].mean(), 
-              df['P5_Reputasi'].mean()]
+    # Pastikan kolom ini ada di CSV Bapak, jika tidak akan diisi 0
+    vals = [df.get('P1_Regulasi', 0).mean(), df.get('P2_Finansial', 0).mean(), 
+            df.get('P3_Integritas', 0).mean(), df.get('P4_Operasional', 0).mean(), 
+            df.get('P5_Reputasi', 0).mean()]
     
     fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(r=values, theta=categories, fill='toself', name='Maturity Level'))
+    fig.add_trace(go.Scatterpolar(r=vals, theta=categories, fill='toself', name='Score'))
     fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=False)
     return fig
 
-    # --- GRAFIK TINGKAT RISIKO ---
-    st.subheader("⚠️ Distribusi Tingkat Risiko")
-    fig2, ax2 = plt.subplots()
-    df['Tingkat Risiko'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax2)
-    st.pyplot(fig2)
+# Logika Utama
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    
+    if nav == "📊 Executive Summary & Status Temuan":
+        st.subheader("📊 Executive Summary & Status Temuan")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("### Temuan per Departemen")
+            fig, ax = plt.subplots()
+            sns.countplot(data=df, y='Departemen', ax=ax)
+            st.pyplot(fig)
+        with col2:
+            st.write("### Status Temuan")
+            fig2, ax2 = plt.subplots()
+            df['Status'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax2)
+            st.pyplot(fig2)
+        st.dataframe(df, use_container_width=True)
+
+    elif nav == "📈 Risk Maturity Analysis & Pentagon":
+        st.subheader("📈 Risk Maturity Analysis")
+        # Perhitungan Maturitas
+        total_avg = df.filter(like='P').mean().mean() if 'P1_Regulasi' in df.columns else 0
+        
+        st.metric("Tingkat Maturitas Organisasi", f"{total_avg:.2f} / 5.0")
+        
+        col1, col2 = st.columns([1, 1.5])
+        with col1:
+            st.info(f"Analisis berdasarkan 5 Pilar Risiko. Skor rata-rata: {total_avg:.2f}")
+        with col2:
+            st.write("### Pentagon Risk Analysis")
+            st.plotly_chart(plot_radar(df), use_container_width=True)
+
+    elif nav == "🤖 SRIS Management AI Consultant":
+        st.subheader("🤖 SRIS Management AI Consultant")
+        st.write("Asisten AI siap menganalisis kepatuhan organisasi...")
+        # Integrasi Gemini bisa ditambahkan di sini
+
 else:
-    st.info("Silakan upload file CSV audit di sidebar.")
+    st.warning("Silakan unggah file data audit di sidebar untuk memulai analisis.")
