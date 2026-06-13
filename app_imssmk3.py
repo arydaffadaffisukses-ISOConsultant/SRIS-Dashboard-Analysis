@@ -3,11 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-st.set_page_config(layout="wide")
-st.title("🛡️ SRIS Audit Engine")
-
-# --- UPLOAD DATA ---
-uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
 import streamlit as st
 
 # 1. Konfigurasi Sidebar
