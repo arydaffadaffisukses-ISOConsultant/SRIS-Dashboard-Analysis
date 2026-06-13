@@ -1,40 +1,35 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+from pypdf import PdfReader
 
-st.set_page_config(layout="wide")
-st.title("🛡️ SRIS Audit & Maturity Dashboard")
+st.title("SRIS Engine Data Advisor")
 
-uploaded_file = st.sidebar.file_uploader("Upload Data Audit (CSV/Excel)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload Dokumen (PDF, Excel, atau CSV)", type=["pdf", "xlsx", "csv"])
 
-if uploaded_file:
-    # Deteksi format
-    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-    
-    # 1. Bersihkan Nama Kolom (Menghapus spasi di awal/akhir)
-    df.columns = df.columns.str.strip()
-    
-    st.write("Data berhasil dimuat!")
-    
-    # 2. Ambil 5 kolom Pentagon secara otomatis (Indeks 6 sampai 10 sesuai screenshot Bapak)
-    # Kita ambil kolom ke-6 hingga ke-10 (Indeks Python dimulai dari 0)
-    cols_pentagon = df.columns[6:11]
-    
-    st.write("Kolom yang digunakan untuk Pentagon:", list(cols_pentagon))
-    
-    # Hitung rata-rata
-    values = df[cols_pentagon].mean().tolist()
-    
-    # Radar Chart
-    fig = go.Figure(data=go.Scatterpolar(
-        r=values,
-        theta=['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi'],
-        fill='toself'
-    ))
-    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])))
-    
-    st.subheader("🕸️ Pentagon Maturity Analysis")
-    st.plotly_chart(fig, use_container_width=True)
+if uploaded_file is not None:
+    # 1. Jika File adalah PDF
+    if uploaded_file.type == "application/pdf":
+        reader = PdfReader(uploaded_file)
+        text = "\n".join([page.extract_text() for page in reader.pages])
+        st.write("PDF berhasil dibaca. Masukkan pertanyaan Bapak:")
+        query = st.text_input("Pertanyaan:")
+        if query:
+            if query.lower() in text.lower():
+                st.success("Informasi ditemukan!")
+                st.write(text[text.lower().find(query.lower()):text.lower().find(query.lower())+500] + "...")
+            else:
+                st.warning("Kata kunci tidak ditemukan.")
 
-else:
-    st.info("Silakan unggah dokumen CSV atau Excel untuk memulai.")
+    # 2. Jika File adalah Excel
+    elif uploaded_file.name.endswith(".xlsx"):
+        df = pd.read_excel(uploaded_file)
+        st.write("Data Excel berhasil dimuat:")
+        st.dataframe(df)
+        st.write("Statistik Data:", df.describe())
+
+    # 3. Jika File adalah CSV
+    elif uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+        st.write("Data CSV berhasil dimuat:")
+        st.dataframe(df)
+        st.write("Statistik Data:", df.describe()
