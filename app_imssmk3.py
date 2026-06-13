@@ -27,7 +27,7 @@ navigasi = st.sidebar.radio(
     options=[
         "📊 Executive Summary & Status Temuan",
         "🕸️ Analisis Radar Pentagon (SRIS Model)",
-        "🔍 Deep Dive Klausul Kepatuhan",
+        "🔍 Maturity Analysis",
         "🤖 SRIS Management AI Consultant"
     ]
 )
@@ -53,6 +53,20 @@ if uploaded_file:
     # Menggunakan kolom 'Departemen' sesuai data Bapak
     df['Departemen'].value_counts().plot(kind='bar', color='#1e5631', ax=ax1)
     st.pyplot(fig1)
+    import plotly.graph_objects as go
+
+def plot_radar_chart(df):
+    # Mengasumsikan data memiliki kolom skor 1-5 untuk 5 pilar
+    categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+    # Rata-rata skor per kategori
+    values = [df['P1_Regulasi'].mean(), df['P2_Finansial'].mean(), 
+              df['P3_Integritas'].mean(), df['P4_Operasional'].mean(), 
+              df['P5_Reputasi'].mean()]
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(r=values, theta=categories, fill='toself', name='Maturity Level'))
+    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=False)
+    return fig
 
     # --- GRAFIK TINGKAT RISIKO ---
     st.subheader("⚠️ Distribusi Tingkat Risiko")
