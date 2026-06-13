@@ -67,10 +67,31 @@ if uploaded_file is not None:
             st.write("### Pentagon Risk Analysis")
             st.plotly_chart(plot_radar(df), use_container_width=True)
 
-    elif nav == "🤖 SRIS Management AI Consultant":
+   elif nav == "🤖 SRIS Management AI Consultant":
         st.subheader("🤖 SRIS Management AI Consultant")
-        st.write("Asisten AI siap menganalisis kepatuhan organisasi...")
-        # Integrasi Gemini bisa ditambahkan di sini
+        
+        # Pilih temuan mana yang ingin dianalisis
+        temuan_list = df['Temuan'].unique()
+        selected_temuan = st.selectbox("Pilih Temuan untuk dianalisis:", temuan_list)
+        
+        if st.button("Analisis Akar Masalah & CAPA"):
+            import google.generativeai as genai
+            
+            # Konfigurasi API
+            genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            prompt = f"""
+            Anda adalah Auditor Ahli SMK3 dan ISO. Analisis temuan berikut: '{selected_temuan}'.
+            Berikan:
+            1. Analisis Akar Masalah (Root Cause Analysis - 5 Whys).
+            2. Rekomendasi Tindakan Perbaikan (CAPA).
+            3. Analisis Risiko jika tidak segera diperbaiki.
+            """
+            
+            response = model.generate_content(prompt)
+            st.write("### Hasil Analisis AI:")
+            st.write(response.text)
 
 else:
     st.warning("Silakan unggah file data audit di sidebar untuk memulai analisis.")
