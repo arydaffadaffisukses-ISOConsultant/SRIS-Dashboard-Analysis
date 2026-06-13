@@ -1,46 +1,43 @@
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 st.set_page_config(layout="wide")
-st.title("🛡️ SRIS Audit & Financial Risk Dashboard")
+st.title("🛡️ SRIS Audit Dashboard")
 
 uploaded_file = st.sidebar.file_uploader("Upload CSV Audit", type=["csv"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
     
-    # 1. METRIK UTAMA (Jumlah Temuan)
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Temuan", len(df))
-    col2.metric("Total Estimasi Kerugian", f"Rp {df['Estimasi_Kerugian_Jt'].sum():,.0f} Jt")
-    col3.metric("Temuan Open", len(df[df['Status']=='Open']))
+    # Navigasi
+    menu = st.sidebar.radio("Navigasi", ["Dashboard Temuan", "Pentagon Analysis (Maturitas)"])
 
-    tab1, tab2 = st.tabs(["Distribusi & Kerugian", "Risk Treatment & Control"])
-
-    with tab1:
-        c1, c2 = st.columns(2)
-        with c1:
-            st.subheader("Temuan per Departemen")
-            fig, ax = plt.subplots()
-            df['Departemen'].value_counts().plot(kind='bar', color='skyblue', ax=ax)
-            st.pyplot(fig)
-        with c2:
-            st.subheader("Estimasi Kerugian per Departemen")
-            st.bar_chart(df.groupby('Departemen')['Estimasi_Kerugian_Jt'].sum())
-
-    with tab2:
-        st.subheader("Risk Treatment & Pengendalian")
-        # Menampilkan tabel khusus untuk status pengendalian
-        st.write("Daftar Tindakan Perbaikan dan Status Pengendalian:")
-        st.dataframe(df[['Temuan', 'Rekomendasi Perbaikan', 'Status', 'Tingkat Risiko']], use_container_width=True)
+    if menu == "Dashboard Temuan":
+        st.subheader("Distribusi Temuan per Departemen")
+        fig, ax = plt.subplots()
+        sns.countplot(data=df, y='Departemen', palette='viridis', ax=ax)
+        st.pyplot(fig)
         
-        # Grafik status risk treatment
-        st.subheader("Distribusi Status Pengendalian")
-        fig2, ax2 = plt.subplots()
-        df['Status'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax2)
-        st.pyplot(fig2)
+        st.subheader("Detail Temuan")
+        st.dataframe(df, use_container_width=True)
+
+    elif menu == "Pentagon Analysis (Maturitas)":
+        st.subheader("🕸️ Pentagon Risk Maturity Analysis")
+        # Asumsi kolom di CSV: P1_Regulasi, P2_Finansial, P3_Integritas, P4_Operasional, P5_Reputasi
+        cols = ['P1_Regulasi', 'P2_Finansial', 'P3_Integritas', 'P4_Operasional', 'P5_Reputasi']
+        
+        # Validasi kolom agar tidak error
+        if all(c in df.columns for c in cols):
+            vals = [df[c].mean() for c in cols]
+            fig = go.Figure(data=go.Scatterpolar(r=vals, theta=['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi'], fill='toself'))
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("File CSV Anda belum memiliki kolom untuk Pentagon (P1_Regulasi, P2_Finansial, dst).")
+            st.write("Pastikan data memiliki 5 kolom skor tersebut.")
 
 else:
-    st.info("Silakan unggah file CSV audit untuk melihat dasbor.")
+    st.info("Silakan unggah file CSV audit.")
