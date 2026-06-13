@@ -30,17 +30,20 @@ df['Maturity_Score'] = df['Tingkat Risiko'].map(maturity_map)
 # Layout Dasbor
 col1, col2 = st.columns(2)
 
+st.subheader("Analisis Operasional & Finansial")
+col1, col2 = st.columns(2)
 with col1:
-    st.subheader("Jumlah Temuan per Departemen")
-    fig1, ax1 = plt.subplots()
-    sns.countplot(data=df, x='Departemen', hue='Departemen', palette='viridis', legend=False, ax=ax1)
-    st.pyplot(fig1)
+    st.pyplot(fig1) # Grafik Temuan
+with col2:
+    st.pyplot(fig2) # Grafik Kerugian
 
 with col2:
-    st.subheader("Estimasi Kerugian (Juta)")
-    fig2, ax2 = plt.subplots()
-    df.groupby('Departemen')['Est_Kerugian_Jt'].sum().plot(kind='bar', color='salmon', ax=ax2)
-    st.pyplot(fig2)
+    st.subheader("Analisis Maturitas & Pentagon")
+col3, col4 = st.columns(2)
+with col3:
+    st.pyplot(fig3) # Grafik Maturitas
+with col4:
+    st.pyplot(fig4) # Grafik Pentagon (Radar Chart)
 
 # Tambahkan elemen lain sesuai kebutuhan
 st.success("Dasbor SRIS Siap Digunakan!")
