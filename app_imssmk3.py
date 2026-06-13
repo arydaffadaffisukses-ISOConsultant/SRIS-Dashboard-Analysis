@@ -32,4 +32,4 @@ if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
         st.write("Data CSV berhasil dimuat:")
         st.dataframe(df)
-        st.write("Statistik Data:", df.describe()
+        st.write("Statistik Data:", df.describe())
