@@ -48,7 +48,7 @@ if uploaded_file:
         st.plotly_chart(fig_radar, use_container_width=True)
         
         # Risk Treatment Table
-        st.subheader("📋 Status Risk Treatment & Pengendalian")
+        st.subheader("📋 Detail Temuan Ketidaksesuaian ")
         # Mencari kolom yang relevan dengan status/rencana
         display_cols = [c for c in df.columns if any(x in c for x in ['Temuan', 'Status', 'Posisi'])]
         st.dataframe(df[display_cols], use_container_width=True)
