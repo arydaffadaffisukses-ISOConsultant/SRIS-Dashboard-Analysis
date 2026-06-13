@@ -23,11 +23,11 @@ if uploaded_file:
         with c1:
             status_col = next((c for c in df.columns if "Status" in c), None)
             if status_col:
-                st.plotly_chart(px.pie(df, names=status_col, title="Status Temuan"), use_container_width=True)
+                st.plotly_chart(px.pie(df, names=status_col, title="Temuan tiap departemen"), use_container_width=True)
         with c2:
             posisi_col = next((c for c in df.columns if "Posisi" in c), None)
             if posisi_col:
-                st.plotly_chart(px.bar(df[posisi_col].value_counts().reset_index(), x=posisi_col, y='count', title="Posisi/Progress Status NC"), use_container_width=True)
+                st.plotly_chart(px.bar(df[posisi_col].value_counts().reset_index(), x=posisi_col, y='count', title="Kerugian tiap departemen"), use_container_width=True)
 
     with tab2:
         st.subheader("Pentagon Maturity & Risk Treatment")
