@@ -1,100 +1,66 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import os
-import matplotlib
-import matplotlib.pyplot as plt
 import seaborn as sns
-import io
+import matplotlib.pyplot as plt
+import numpy as np
 
-# Paksa backend agar stabil di Cloud
-matplotlib.use('Agg')
+st.set_page_config(page_title="SRIS Audit Dashboard", layout="wide")
 
-# ==========================================
-# 1. KONFIGURASI HALAMAN (HANYA SEKALI)
-# ==========================================
-st.set_page_config(page_title="SRIS Engine Dashboard", layout="wide", page_icon="🛡️")
+st.title("🛡️ SRIS Audit & Risk Intelligence")
 
-# --- CSS STYLING ---
-st.markdown("""
-    <style>
-    .metric-box { background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.05); border-left: 6px solid #1E5631; }
-    .security-banner { background: linear-gradient(to right, #1e5631, #4c9a2a); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
-    .chat-bubble-user { background-color: #1E5631; color: white; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; }
-    .chat-bubble-bot { background-color: #e9ecef; color: #333; padding: 12px; border-radius: 15px; margin-bottom: 10px; }
-    </style>
-""", unsafe_allow_html=True)
+# 1. Mock Data (Ganti bagian ini dengan load file CSV/Excel Bapak)
+data = {
+    'Departemen': ['Logistik', 'Produksi', 'HRD', 'Maintenance', 'Logistik', 'Produksi'],
+    'Standard': ['ISO 9001', 'ISO 45001', 'ISO 9001', 'ISO 45001', 'ISO 14001', 'ISO 9001'],
+    'Estimasi_Kerugian_Jt': [50, 20, 10, 100, 30, 40],
+    'P1_Regulasi': [4, 2, 3, 5, 2, 4],
+    'P2_Finansial': [3, 1, 2, 5, 3, 2],
+    'P3_Integritas': [4, 3, 4, 3, 2, 4],
+    'P4_Operasional': [2, 5, 2, 4, 3, 2],
+    'P5_Reputasi': [3, 2, 3, 4, 3, 3]
+}
+df = pd.DataFrame(data)
 
-st.markdown("""
-    <div class='security-banner'>
-        <h2>🛡️ SRIS Integrated Engine: ISO-IMS & SMK3 Dashboard</h2>
-        <p>Strategic Risk Intelligence System | Otomatisasi Matriks Kepatuhan ISO & SMK3 PP 50/2012</p>
-    </div>
-""", unsafe_allow_html=True)
+# Sidebar Filter
+dept = st.sidebar.selectbox("Pilih Departemen", ["Semua"] + list(df['Departemen'].unique()))
+df_f = df if dept == "Semua" else df[df['Departemen'] == dept]
 
-# ==========================================
-# 2. LOAD DATA & STATE
-# ==========================================
-if 'df_ims' not in st.session_state:
-    st.session_state['df_ims'] = None
+# --- VISUALISASI ---
+col1, col2 = st.columns(2)
 
-st.sidebar.header("📂 Sumber Data Audit")
-uploaded_file = st.sidebar.file_uploader("Unggah File (CSV/XLSX):", type=["csv", "xlsx"])
+with col1:
+    # 1. Grafik Temuan per Departemen
+    st.subheader("📊 Temuan per Departemen")
+    fig, ax = plt.subplots()
+    sns.countplot(data=df_f, y='Departemen', palette='viridis', ax=ax)
+    st.pyplot(fig)
 
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-        st.session_state['df_ims'] = df
-    except Exception as e:
-        st.sidebar.error(f"Error: {e}")
+    # 2. Grafik Standar ISO
+    st.subheader("📋 Distribusi Standar ISO")
+    fig2, ax2 = plt.subplots()
+    df_f['Standard'].value_counts().plot(kind='pie', autopct='%1.1f%%', ax=ax2)
+    st.pyplot(fig2)
 
-# ==========================================
-# 3. LOGIKA ENGINE & FILTER
-# ==========================================
-if st.session_state['df_ims'] is not None:
-    df = st.session_state['df_ims'].copy()
-    df.columns = [col.strip() for col in df.columns]
+with col2:
+    # 3. Estimasi Kerugian
+    st.subheader("💰 Estimasi Kerugian (Jt)")
+    st.bar_chart(df_f.groupby('Departemen')['Estimasi_Kerugian_Jt'].sum())
+
+    # 4. Pentagon Analysis (Radar Chart)
+    st.subheader("🕸️ Pentagon Risk Analysis")
+    labels = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+    stats = [df_f['P1_Regulasi'].mean(), df_f['P2_Finansial'].mean(), df_f['P3_Integritas'].mean(), 
+             df_f['P4_Operasional'].mean(), df_f['P5_Reputasi'].mean()]
     
-    # Filter Departemen
-    kolom_dept = 'Departemen Divisi/Area'
-    if kolom_dept in df.columns:
-        dept_list = ["Semua"] + sorted(list(df[kolom_dept].dropna().unique()))
-        pilihan_dept = st.sidebar.selectbox("Pilih Departemen:", dept_list)
-        df_filtered = df if pilihan_dept == "Semua" else df[df[kolom_dept] == pilihan_dept]
-    else:
-        df_filtered = df
-        pilihan_dept = "Semua"
+    fig3, ax3 = plt.subplots(subplot_kw={'projection': 'polar'})
+    angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
+    stats = np.concatenate((stats, [stats[0]]))
+    angles = np.concatenate((angles, [angles[0]]))
+    ax3.plot(angles, stats, 'o-', linewidth=2)
+    ax3.fill(angles, stats, alpha=0.25)
+    ax3.set_xticks(angles[:-1], labels)
+    st.pyplot(fig3)
 
-    # ==========================================
-    # 4. NAVIGASI
-    # ==========================================
-    menu = st.sidebar.radio("Navigasi:", ["📊 Executive Summary", "🕸️ Pentagon Risk", "🤖 SRIS AI Consultant"])
-
-    if menu == "📊 Executive Summary":
-        st.subheader(f"Analisis Departemen: {pilihan_dept}")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Total Temuan", len(df_filtered))
-        c2.metric("Status Open", len(df_filtered)) # Sesuaikan dengan kolom status Bapak
-        c3.metric("Status Closed", 0)
-        
-    elif menu == "🤖 SRIS AI Consultant":
-        st.subheader("🤖 SRIS Executive AI Consultant")
-        
-        # INSTRUKSI AI (DIBUNGKUS AGAR TIDAK ERROR)
-        system_instruction = """
-        Anda adalah Senior Management Consultant & Auditor Utama bersertifikasi ISO 9001, 14001, 45001, dan SMK3 PP 50/2012.
-        Tugas Anda membantu merumuskan akar masalah dan menyusun Rekomendasi Tindakan Perbaikan (CAPA) untuk Level Operasional.
-        """
-        
-        api_key = st.text_input("🔑 Masukkan Gemini API Key:", type="password")
-        if api_key:
-            user_query = st.chat_input("Tanyakan solusi CAPA...")
-            if user_query:
-                st.write(f"🧑‍💼 Anda: {user_query}")
-                st.info("AI sedang menganalisis data...")
-                # Panggil API Gemini di sini...
-        else:
-            st.warning("Masukkan API Key untuk memulai sesi.")
-
-else:
-    st.info("Silakan unggah data audit di sidebar untuk memulai.")
+# 5. Detail Temuan
+st.subheader("📝 Detail Data Audit")
+st.dataframe(df_f, use_container_width=True)
