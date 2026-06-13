@@ -297,7 +297,7 @@ with col1:
                     ringkasan_data = df_filtered[[c for c in kolom_ks if c in df_filtered.columns]].to_string(index=False)
                     
                     system_instruction = f"""
-                    Anda adalah Senior Management Consultant & Auditor Utama bersertifikasi ISO 9001, 14001, 45001, dan SMK3 PP 50/2012.
+                    # Anda adalah Senior Management Consultant & Auditor Utama bersertifikasi ISO 9001, 14001, 45001, dan SMK3 PP 50/2012.
                     Tugas Anda membantu merumuskan akar masalah dan menyusun Rekomendasi Tindakan Perbaikan (CAPA) untuk Level Operasional dan level Eksekutif.
                     
                     --- MODE OPERASI SAAT INI ---
