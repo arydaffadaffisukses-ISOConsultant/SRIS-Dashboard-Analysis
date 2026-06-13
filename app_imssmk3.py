@@ -52,6 +52,31 @@ if uploaded_file:
         # Mencari kolom yang relevan dengan status/rencana
         display_cols = [c for c in df.columns if any(x in c for x in ['Temuan', 'Status', 'Posisi'])]
         st.dataframe(df[display_cols], use_container_width=True)
+        elif menu == "AI Root Cause & CAPA":
+        st.subheader("🤖 SRIS AI Analyst (Root Cause & CAPA)")
+        
+        # Pilih Temuan yang akan dianalisis
+        temuan_options = df['Detail Temuan Ketidaksesuaian'].dropna().tolist()
+        selected_temuan = st.selectbox("Pilih Temuan untuk dianalisis:", temuan_options)
+        
+        if st.button("Generate Analisis Akar Masalah & CAPA"):
+            import google.generativeai as genai
+            
+            # Konfigurasi API
+            genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            prompt = f"""
+            Anda adalah Konsultan Auditor Senior. Analisis temuan berikut: '{selected_temuan}'.
+            Berikan output dalam format:
+            1. Root Cause Analysis (menggunakan metode 5 Whys).
+            2. Rekomendasi Tindakan Perbaikan (CAPA) yang spesifik dan terukur.
+            3. Penilaian Risiko jika temuan ini tidak segera ditangani.
+            """
+            
+            with st.spinner('AI sedang menganalisis akar masalah...'):
+                response = model.generate_content(prompt)
+                st.markdown(response.text)
 
 else:
     st.info("Silakan unggah file untuk memulai.")
