@@ -14,7 +14,12 @@ csv_data = '''Timestamp,Auditor,Lokasi/Unit,Departemen,Temuan,Kategori,Tingkat R
 2026-06-02 11:20:00,Siti Aminah,Gudang B,Logistik,Forklift tanpa lampu,Fasilitas,Medium,Perbaikan lampu forklift,In Progress,2026-06-10,Menunggu sparepart'''
 
 df = pd.read_csv(io.StringIO(csv_data))
-
+# Definisi fungsi untuk mengambil skor rata-rata per dimensi
+def get_dimensi_score(dimensi_name):
+    # Filter data berdasarkan Kategori (dimensi) dan ambil rata-rata skornya
+    val = df[df['Kategori'] == dimensi_name]['Score'].mean()
+    # Jika tidak ada data, kembalikan nilai 0 agar tidak error
+    return val if pd.notnull(val) else 0
 # 2. Persiapan Data (Mapping)
 bobot = {'Critical': 5, 'High': 3, 'Medium': 2, 'Low': 1}
 maturity_map = {'Critical': 1, 'High': 2, 'Medium': 3, 'Low': 4}
