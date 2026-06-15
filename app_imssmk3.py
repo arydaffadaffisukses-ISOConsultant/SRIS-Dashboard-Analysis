@@ -13,7 +13,6 @@ uploaded_file = st.file_uploader("Upload file CSV/Excel data temuan:", type=["cs
 if uploaded_file:
     # Membaca data
     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-    # Tambahkan ini untuk melihat nama kolom yang terbaca
     st.write("Daftar kolom yang terbaca:", df.columns.tolist())
 
     # Tab Dashboard
