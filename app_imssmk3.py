@@ -49,9 +49,29 @@ if uploaded_file is not None:
                 df[col] = df[col].map(mapping).fillna(0) # Jika teks tidak cocok, jadi 0
 
         # Radar Chart
-        avg_scores = df[cols_pentagon].mean().values
-        fig_radar = go.Figure(data=go.Scatterpolar(r=avg_scores, theta=['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi'], fill='toself'))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Pentagon Analysis")
+        # 2. Radar Chart yang Lebih Menarik & Berwarna
+        fig_radar = go.Figure()
+
+        # Menambahkan data dengan warna yang lebih elegan (Indigo dengan transparansi)
+        fig_radar.add_trace(go.Scatterpolar(
+              r=avg_scores,
+              theta=categories,
+              fill='toself',           # Mengisi area dalam dengan warna
+              fillcolor='rgba(99, 110, 250, 0.5)', # Warna biru dengan transparansi 50%
+              line=dict(color='#636EFA', width=3), # Garis tepi lebih tebal
+              marker=dict(size=8, color='#636EFA') # Titik data yang menonjol
+        ))
+
+        # Mengatur tampilan background agar bersih dan modern
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 5], gridcolor='lightgray'),
+                angularaxis=dict(gridcolor='lightgray')
+            ),
+            title="Analisis Pentagon (Rata-rata)",
+            paper_bgcolor='rgba(0,0,0,0)', # Background transparan agar menyatu dengan dasbor
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
         st.plotly_chart(fig_radar, use_container_width=True)
         
         # Risk & Maturity (Memastikan kolom ini juga angka)
