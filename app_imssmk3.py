@@ -52,7 +52,7 @@ if uploaded_file is not None:
                 else:
                     try:
                         genai.configure(api_key=user_api_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        model = genai.GenerativeModel('gemini-pro')
                         response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
                         st.markdown(response.text)
                     except Exception as e:
