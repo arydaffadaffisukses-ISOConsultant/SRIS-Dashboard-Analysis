@@ -31,6 +31,7 @@ if uploaded_file is not None:
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
     # Tab 1: Dashboard Ringkasan
+    # Tab 1: Dashboard Ringkasan
     with tab1:
         st.subheader("Analisis Temuan")
         col1, col2 = st.columns(2)
@@ -39,21 +40,36 @@ if uploaded_file is not None:
             st.subheader("Temuan Per Departemen")
             df_temuan = df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah')
             df_temuan = df_temuan.sort_values(by='Jumlah', ascending=False)
+            
+            # Warna: Merah untuk tertinggi, biru untuk lainnya
             colors = ['red' if i == 0 else 'royalblue' for i in range(len(df_temuan))]
+            
             fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color_discrete_sequence=['royalblue'])
             fig_bar.update_traces(marker_color=colors)
             st.plotly_chart(fig_bar, use_container_width=True)
 
         with col2:
             st.subheader("Estimasi Kerugian Per Departemen")
-            df_kerugian = df.groupby('Departemen Divisi/Area')[target_col].sum().reset_index()
-            df_kerugian = df_kerugian.sort_values(by=target_col, ascending=False)
             
-            if df_kerugian[target_col].sum() > 0:
-                fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', values=target_col)
-                st.plotly_chart(fig_pie, use_container_width=True)
-            else:
-                st.warning("Data estimasi kerugian tidak ditemukan/nol.")
+            # Agregasi kerugian per departemen
+            df_kerugian = df.groupby('Departemen Divisi/Area')['Estimasi Kerugian Finansial Atas Temuan Audit'].sum().reset_index()
+            df_kerugian = df_kerugian.sort_values(by='Estimasi Kerugian Finansial Atas Temuan Audit', ascending=False)
+            
+            # Membuat list warna: merah untuk yang tertinggi (index 0)
+            colors_pie = ['red' if i == 0 else 'lightgrey' for i in range(len(df_kerugian))]
+            
+            fig_pie = px.pie(
+                df_kerugian, 
+                names='Departemen Divisi/Area', 
+                values='Estimasi Kerugian Finansial Atas Temuan Audit',
+                hole=0.3 # Membuatnya menjadi Donut Chart agar lebih modern
+            )
+            
+            # Memaksa warna merah untuk departemen dengan kerugian terbesar
+            fig_pie.update_traces(marker=dict(colors=colors_pie))
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+        
 
     # Tab 2: Pentagon & Risk
     with tab2:
