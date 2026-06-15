@@ -91,7 +91,7 @@ if uploaded_file is not None:
                     try:
                         genai.configure(api_key=user_api_key)
                         # Menggunakan nama model yang lebih umum dan stabil
-                        model = genai.GenerativeModel('gemini-1.5-pro')
+                        model = genai.GenerativeModel('gemini-pro')
                         
                         with st.spinner('AI sedang menganalisis...'):
                             response = model.generate_content(f"Berikan analisis akar masalah dan rekomendasi untuk temuan audit berikut: {selected}")
