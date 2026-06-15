@@ -21,18 +21,18 @@ if uploaded_file:
         st.subheader("Analisis Temuan")
         col1, col2 = st.columns(2)
         with col1:
-            fig1 = px.pie(df, names='Departemen', title='Distribusi Temuan per Departemen')
+            fig1 = px.pie(df, names='Departemen Divisi/Area', title='Distribusi Temuan per Departemen Divisi/Area')
             st.plotly_chart(fig1, use_container_width=True)
         with col2:
-            fig2 = px.bar(df, x='Departemen', y='Kerugian', title='Estimasi Kerugian')
+            fig2 = px.bar(df, x='Departemen Divisi/Area ', y='Kerugian', title='Estimasi Kerugian')
             st.plotly_chart(fig2, use_container_width=True)
 
     with tab2:
         st.subheader("Risk & Maturity")
-        fig3 = px.box(df, x='Departemen', y='Risk_Maturity_Score', title='Risk Maturity Level')
+        fig3 = px.box(df, x='Departemen Divisi/Area', y='Risk_Maturity_Score', title='Risk Maturity Level')
         st.plotly_chart(fig3, use_container_width=True)
         
-        fig4 = px.scatter(df, x='Risk_Maturity_Score', y='Kerugian', color='Departemen', title='Pengendalian Risiko')
+        fig4 = px.scatter(df, x='Risk_Maturity_Score', y='Kerugian', color='Departemen Divisi/Area', title='Pengendalian Risiko')
         st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
