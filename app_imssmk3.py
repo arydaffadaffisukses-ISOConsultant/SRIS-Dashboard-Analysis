@@ -3,10 +3,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
-try:
-    from pypdf import PdfReader
-except ImportError:
-    PdfReader = None
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="SRIS Dashboard", layout="wide")
@@ -23,7 +19,7 @@ if uploaded_file is not None:
         st.error(f"Gagal membaca file: {e}")
         st.stop()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst", "📜 Regulasi PDF"])
+    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
     # Tab 1: Dashboard Ringkasan
     with tab1:
@@ -80,22 +76,18 @@ if uploaded_file is not None:
     with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        
         if user_api_key and "Detail Temuan Ketidaksesuaian" in df.columns:
-            genai.configure(api_key=user_api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-            if st.button("Generate Analisis"):
-                response = model.generate_content(f"Analisis akar masalah dari temuan berikut: {selected}")
-                st.markdown(response.text)
-
-    # Tab 4: Regulasi
-    with tab4:
-        st.subheader("📜 Upload PDF Regulasi")
-        if PdfReader:
-            uploaded_pdf = st.file_uploader("Upload PDF:", type=["pdf"])
-            if uploaded_pdf:
-                reader = PdfReader(uploaded_pdf)
-                text = "".join([p.extract_text() for p in reader.pages])
-                st.success("Regulasi berhasil dimuat!")
-        else:
-            st.warning("Pustaka PDF tidak tersedia.")
+            try:
+                genai.configure(api_key=user_api_key)
+                # Menggunakan model yang lebih stabil
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                
+                if st.button("Generate Analisis"):
+                    with st.spinner('AI sedang menganalisis...'):
+                        response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan berikut: {selected}")
+                        st.markdown(response.text)
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat memanggil AI: {e}")
