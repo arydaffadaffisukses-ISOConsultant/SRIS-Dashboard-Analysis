@@ -42,8 +42,25 @@ if uploaded_file is not None:
                       color='Departemen Divisi/Area') # Menambahkan warna per departemen
         st.plotly_chart(fig3, use_container_width=True)
         
-        fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
-                          color='Departemen Divisi/Area', title='Hubungan Risiko & Kerugian')
+        # Grafik 4: Menggunakan Bubble Chart yang lebih kaya informasi
+        fig4 = px.scatter(
+            df, 
+            x='Implementation Risk Maturity', 
+            y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+            color='Departemen Divisi/Area',  # Warna berdasarkan Departemen
+            size='Implementation Risk Maturity', # Ukuran titik berdasarkan Maturity
+            hover_data=['Detail Temuan Ketidaksesuaian'], # Munculkan detail saat kursor diarahkan
+            title='Hubungan Risiko & Kerugian (Bubble Analysis)',
+            opacity=0.7
+        )
+        
+        # Mempercantik layout agar tidak kaku
+        fig4.update_layout(
+            xaxis_title="Tingkat Kematangan Risiko (Maturity)",
+            yaxis_title="Estimasi Kerugian (IDR)",
+            template="plotly_white"
+        )
+        
         st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
