@@ -39,7 +39,24 @@ if uploaded_file is not None:
             if col in df.columns:
                 df[col] = df[col].map(mapping).fillna(0)
         
-        avg_scores = df[cols_pentagon].mean().values
+        # Debugging: Tampilkan data unik untuk memastikan mapping benar
+        # 1. PEMBERSIHAN DATA (Agar tidak peduli spasi atau huruf besar)
+        for col in cols_pentagon:
+            if col in df.columns:
+                # Mengubah ke string, buang spasi, lalu samakan huruf besar/kecil
+                df[col] = df[col].astype(str).str.strip().str.capitalize()
+
+        # 2. MAPPING YANG LEBIH FLEKSIBEL
+        mapping = {
+            'Rendah': 1, 'Cukup': 2, 'Sedang': 3, 'Baik': 4, 'Sangat baik': 5
+        }
+        
+        # Lakukan mapping
+        for col in cols_pentagon:
+            if col in df.columns:
+                df[col] = df[col].map(mapping).fillna(0)
+        st.write("Cek Data Pentagon (Pastikan angka muncul, bukan 0):")
+        st.write(df[cols_pentagon].head()) avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
 
         fig_radar = go.Figure()
