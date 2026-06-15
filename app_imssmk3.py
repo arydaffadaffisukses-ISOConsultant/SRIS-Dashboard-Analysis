@@ -22,7 +22,7 @@ if uploaded_file is not None:
             fig1 = px.pie(df, names='Departemen Divisi/Area', title='Distribusi Temuan')
             st.plotly_chart(fig1, use_container_width=True)
         with col2:
-            fig2 = px.histogram(df, x='Departemen Divisi/Area', color='Estimasi Kerugian Finansial Atas Temuan Audit', barmode='group')
+            fig2 = px.histogram(df, x='Departemen Divisi/Area', color='Estimasi Kerugian Finansial Atas Temuan Audit')
             st.plotly_chart(fig2, use_container_width=True)
 
     with tab2:
@@ -36,38 +36,45 @@ if uploaded_file is not None:
             'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
         ]
         
-        # --- PEMBERSIH DATA YANG LEBIH KUAT ---
         def clean_and_map(val):
-            val_str = str(val).strip().lower() # Hilangkan spasi & buat huruf kecil semua
+            val_str = str(val).strip().lower()
             if 'rendah' in val_str: return 1
             if 'cukup' in val_str: return 2
             if 'sedang' in val_str: return 3
-            if 'baik' in val_str and 'sangat' not in val_str: return 4
             if 'sangat baik' in val_str: return 5
-            return 0 # Jika benar-benar tidak ketemu kata kuncinya
+            if 'baik' in val_str: return 4
+            return 0
 
         for col in cols_pentagon:
             if col in df.columns:
                 df[col] = df[col].apply(clean_and_map)
         
-        # Debugging: Cek apakah sekarang sudah muncul angkanya
-        st.write("Cek Data Setelah Mapping (Jika masih 0, cek ejaan di Excel):")
-        st.write(df[cols_pentagon].head())
-        
-        # Lanjutkan ke pembuatan grafik
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
         
-        # ... (Kode grafik Radar & lainnya tetap sama)
+        # Radar Chart yang Berwarna
+        fig_radar = go.Figure()
+        fig_radar.add_trace(go.Scatterpolar(
+            r=avg_scores, 
+            theta=categories, 
+            fill='toself',
+            fillcolor='rgba(99, 110, 250, 0.4)',
+            line=dict(color='#636EFA', width=3),
+            marker=dict(size=8)
+        ))
+        fig_radar.update_layout(
+            polar=dict(radialaxis=dict(visible=True, range=[0, 5])),
+            title="Rata-rata Skor Pentagon (Warna: Indikasi Performa)"
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
         
         # Risk & Maturity
         fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
         st.plotly_chart(fig3, use_container_width=True)
         
-        # Hubungan Risiko & Kerugian
+        # Bubble Chart
         fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
-                          color='Departemen Divisi/Area', size='Implementation Risk Maturity', 
-                          hover_data=['Detail Temuan Ketidaksesuaian'], template="plotly_white")
+                          color='Departemen Divisi/Area', size='Implementation Risk Maturity', template="plotly_white")
         st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
