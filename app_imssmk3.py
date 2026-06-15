@@ -11,7 +11,6 @@ st.title("📊 SRIS Dashboard Analysis")
 uploaded_file = st.file_uploader("Upload file CSV/Excel:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    # Membaca data
     try:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
@@ -44,21 +43,24 @@ if uploaded_file is not None:
         
         def clean_and_map(val):
             val_str = str(val).strip().lower()
-            if 'rendah' in val_str: return 1
-            if 'cukup' in val_str: return 2
-            if 'sedang' in val_str: return 3
-            if 'sangat baik' in val_str: return 5
-            if 'baik' in val_str: return 4
+            if any(x in val_str for x in ['rendah', 'low', '1']): return 1
+            if any(x in val_str for x in ['cukup', 'medium', '2']): return 2
+            if any(x in val_str for x in ['sedang', '3']): return 3
+            if any(x in val_str for x in ['baik', 'high', '4']): return 4
+            if any(x in val_str for x in ['sangat baik', 'excellent', '5']): return 5
             return 0
 
         for col in cols_pentagon:
             if col in df.columns:
                 df[col] = df[col].apply(clean_and_map)
         
+        # Tampilkan data agar Bapak bisa memastikan angka sudah benar
+        st.write("Data yang terdeteksi (1-5):")
+        st.write(df[cols_pentagon].head())
+        
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
         
-        # Radar Chart
         fig_radar = go.Figure()
         fig_radar.add_trace(go.Scatterpolar(
             r=avg_scores, theta=categories, fill='toself',
@@ -69,14 +71,8 @@ if uploaded_file is not None:
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Skor Pentagon")
         st.plotly_chart(fig_radar, use_container_width=True)
         
-        # Risk & Maturity
         fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
         st.plotly_chart(fig3, use_container_width=True)
-        
-        # Bubble Chart
-        fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
-                          color='Departemen Divisi/Area', size='Implementation Risk Maturity', template="plotly_white")
-        st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
@@ -85,21 +81,14 @@ if uploaded_file is not None:
         if user_api_key:
             try:
                 genai.configure(api_key=user_api_key)
-                # Kode Detektif: Mencari model yang tersedia
                 models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                st.write("Model yang tersedia di akun Anda:", models)
+                model_name = st.selectbox("Pilih Model AI:", models)
                 
-                # Pilih model pertama yang tersedia dari daftar
-                if models:
-                    model_name = st.selectbox("Pilih Model yang tersedia:", models)
+                if "Detail Temuan Ketidaksesuaian" in df.columns:
                     selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-                    
                     if st.button("Generate Analisis AI"):
                         model = genai.GenerativeModel(model_name)
                         response = model.generate_content(f"Analisis akar masalah: {selected}")
                         st.markdown(response.text)
-                else:
-                    st.error("Tidak ada model yang ditemukan untuk API Key ini.")
             except Exception as e:
-                st.error(f"Error: {e}")
-                        
+                st.error(f"Error AI: {e}")
