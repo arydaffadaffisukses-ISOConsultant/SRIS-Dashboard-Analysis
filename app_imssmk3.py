@@ -23,24 +23,39 @@ if uploaded_file:
 
     # Tab Dashboard
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
-
     with tab1:
         st.subheader("Analisis Temuan")
+        # Membersihkan spasi di nama kolom
+        df.columns = df.columns.str.strip()
+        
+        # Menampilkan daftar kolom agar Bapak bisa melihat nama yang benar
+        st.write("Daftar kolom yang ditemukan di file Bapak:", df.columns.tolist())
+        
         col1, col2 = st.columns(2)
+        
+        # Menggunakan kolom pertama untuk Pie Chart
         with col1:
-            fig1 = px.pie(df, names='Departemen Divisi/Area', title='Distribusi Temuan per Departemen Divisi/Area')
+            # Memilih kolom berdasarkan urutan jika nama kolom tidak pasti
+            col_nama = df.columns[0] 
+            fig1 = px.pie(df, names=col_nama, title=f'Distribusi Temuan per {col_nama}')
             st.plotly_chart(fig1, use_container_width=True)
+            
+        # Menggunakan kolom kedua untuk Bar Chart (Kerugian)
         with col2:
-            fig2 = px.bar(df, x='Departemen Divisi/Area ', y='Kerugian', title='Estimasi Kerugian')
+            col_nilai = df.columns[1] 
+            fig2 = px.bar(df, x=col_nama, y=col_nilai, title=f'Estimasi {col_nilai}')
             st.plotly_chart(fig2, use_container_width=True)
 
     with tab2:
         st.subheader("Risk & Maturity")
-        fig3 = px.box(df, x='Departemen Divisi/Area', y='Risk_Maturity_Score', title='Risk Maturity Level')
-        st.plotly_chart(fig3, use_container_width=True)
+        # Menggunakan kolom ke-3 dan ke-4 untuk grafik risiko
+        col_risk = df.columns[2]
         
-        fig4 = px.scatter(df, x='Risk_Maturity_Score', y='Kerugian', color='Departemen Divisi/Area', title='Pengendalian Risiko')
-        st.plotly_chart(fig4, use_container_width=True)
+        fig3 = px.box(df, x=col_nama, y=col_risk, title=f'Tingkat {col_risk}')
+        st.plotly_chart(fig3, use_container_width=True)
+    
+        
+        
 
     with tab3:
         st.subheader("AI Root Cause Analysis & CAPA")
