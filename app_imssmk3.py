@@ -49,13 +49,19 @@ if uploaded_file:
         st.dataframe(df, use_container_width=True)
 
     with tab3:
+        with tab3:
         st.subheader("AI Root Cause Analysis & CAPA")
-        temuan_col = "Detail Temuan Ketidaksesuaian" # Sesuaikan dengan nama kolom asli Bapak
+        temuan_col = "Detail Temuan Ketidaksesuaian" 
+        
         if temuan_col in df.columns:
             selected_temuan = st.selectbox("Pilih Temuan untuk dianalisis:", df[temuan_col].dropna().unique())
+            
             if st.button("Generate Analisis AI"):
+                # Pastikan baris di bawah ini tidak menjorok terlalu dalam
                 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                # Baris ini harus sejajar dengan 'model = ...'
                 response = model.generate_content(f"Analisis akar masalah dan buatkan rencana CAPA untuk temuan: {selected_temuan}")
                 st.markdown(response.text)
         else:
