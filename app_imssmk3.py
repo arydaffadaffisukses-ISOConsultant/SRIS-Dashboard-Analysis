@@ -87,16 +87,39 @@ if uploaded_file is not None:
 
     # Tab 3: AI Analyst
     with tab3:
-        st.subheader("🤖 AI Root Cause Analysis")
-        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
-        if user_api_key and "Detail Temuan Ketidaksesuaian" in df.columns:
-            try:
-                genai.configure(api_key=user_api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-                if st.button("Generate Analisis"):
-                    with st.spinner('AI sedang menganalisis...'):
-                        response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan berikut: {selected}")
-                        st.markdown(response.text)
-            except Exception as e:
-                st.error(f"Terjadi kesalahan saat memanggil AI: {e}")
+        with tab3:
+    st.subheader("🤖 AI Root Cause Analysis")
+    user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+    
+    if user_api_key:
+        try:
+            genai.configure(api_key=user_api_key)
+            
+            # Mendapatkan daftar model yang mendukung generateContent
+            # Kita filter agar hanya mengambil nama model yang valid
+            models_info = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            model_names = [m.name for m in models_info]
+            
+            if model_names:
+                st.success(f"Ditemukan {len(model_names)} model yang tersedia.")
+                model_name = st.selectbox("Pilih Model:", model_names, index=0)
+                
+                # Cek apakah kolom temuan tersedia di dataframe
+                if "Detail Temuan Ketidaksesuaian" in df.columns:
+                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                    
+                    if st.button("Generate Analisis AI"):
+                        with st.spinner("AI sedang berpikir..."):
+                            # Inisialisasi model
+                            model = genai.GenerativeModel(model_name)
+                            # Generate konten
+                            response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan untuk temuan berikut: {selected}")
+                            st.markdown("### Hasil Analisis AI:")
+                            st.markdown(response.text)
+                else:
+                    st.error("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan di file Anda.")
+            else:
+                st.warning("Tidak ada model yang tersedia. Pastikan API Key Anda aktif dan memiliki kuota.")
+                
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat menghubungkan ke Google AI: {e}")
