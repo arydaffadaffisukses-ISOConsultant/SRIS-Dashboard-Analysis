@@ -45,11 +45,8 @@ if uploaded_file:
         fig_radar = go.Figure(data=go.Scatterpolar(r=values, theta=['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi'], fill='toself'))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])))
         st.plotly_chart(fig_radar, use_container_width=True)
-        
         st.dataframe(df, use_container_width=True)
-
     with tab3:
-with tab3:
         st.subheader("AI Root Cause Analysis & CAPA")
         temuan_col = "Detail Temuan Ketidaksesuaian"
         
