@@ -4,14 +4,20 @@ import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
 
-st.set_page_config(layout="wide")
-st.title("SRIS Dashboard Analysis")
+# Konfigurasi Halaman
+st.set_page_config(page_title="SRIS Dashboard", layout="wide")
+st.title("📊 SRIS Dashboard Analysis")
 
 uploaded_file = st.file_uploader("Upload file CSV/Excel:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()
+    # Membaca data
+    try:
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+        df.columns = df.columns.str.strip()
+    except Exception as e:
+        st.error(f"Gagal membaca file: {e}")
+        st.stop()
 
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
@@ -52,20 +58,15 @@ if uploaded_file is not None:
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
         
-        # Radar Chart yang Berwarna
+        # Radar Chart
         fig_radar = go.Figure()
         fig_radar.add_trace(go.Scatterpolar(
-            r=avg_scores, 
-            theta=categories, 
-            fill='toself',
+            r=avg_scores, theta=categories, fill='toself',
             fillcolor='rgba(99, 110, 250, 0.4)',
             line=dict(color='#636EFA', width=3),
             marker=dict(size=8)
         ))
-        fig_radar.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[0, 5])),
-            title="Rata-rata Skor Pentagon (Warna: Indikasi Performa)"
-        )
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Skor Pentagon")
         st.plotly_chart(fig_radar, use_container_width=True)
         
         # Risk & Maturity
@@ -90,9 +91,7 @@ if uploaded_file is not None:
                 else:
                     try:
                         genai.configure(api_key=user_api_key)
-                        # Menggunakan nama model yang lebih umum dan stabil
                         model = genai.GenerativeModel('gemini-pro')
-                        
                         with st.spinner('AI sedang menganalisis...'):
                             response = model.generate_content(f"Berikan analisis akar masalah dan rekomendasi untuk temuan audit berikut: {selected}")
                             st.markdown("### Hasil Analisis AI:")
