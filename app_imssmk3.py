@@ -27,44 +27,76 @@ if uploaded_file is not None:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Grafik Batang: Temuan Per Departemen (Terbanyak = Merah)
             st.subheader("Temuan Per Departemen")
             df_temuan = df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah')
             df_temuan = df_temuan.sort_values(by='Jumlah', ascending=False)
             
-            # Membuat list warna: merah untuk yang tertinggi, biru untuk lainnya
+            # Warna: Merah untuk tertinggi, biru untuk lainnya
             colors = ['red' if i == 0 else 'royalblue' for i in range(len(df_temuan))]
             
-            fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', 
-                             title='Distribusi Jumlah Temuan per Departemen',
-                             color_discrete_sequence=['royalblue'])
+            fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color_discrete_sequence=['royalblue'])
             fig_bar.update_traces(marker_color=colors)
             st.plotly_chart(fig_bar, use_container_width=True)
 
         with col2:
-            # Pie Chart: Estimasi Kerugian Per Departemen (Resiko Tinggi = Merah)
             st.subheader("Estimasi Kerugian Per Departemen")
             df_kerugian = df.groupby('Departemen Divisi/Area')['Estimasi Kerugian Finansial Atas Temuan Audit'].sum().reset_index()
             df_kerugian = df_kerugian.sort_values(by='Estimasi Kerugian Finansial Atas Temuan Audit', ascending=False)
             
-            # Logika warna: Merah untuk nilai tertinggi (asumsi resiko tinggi di kerugian terbesar)
             colors_pie = ['red' if i == 0 else 'lightgrey' for i in range(len(df_kerugian))]
             
-            fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', 
-                             values='Estimasi Kerugian Finansial Atas Temuan Audit',
-                             title='Proporsi Estimasi Kerugian Finansial',
-                             color_discrete_sequence=px.colors.qualitative.Pastel)
-            
-            # Memaksa warna merah untuk bagian terbesar
+            fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', values='Estimasi Kerugian Finansial Atas Temuan Audit')
             fig_pie.update_traces(marker=dict(colors=colors_pie))
             st.plotly_chart(fig_pie, use_container_width=True)
 
     # Tab 2: Pentagon & Risk
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
-        # ... (kode Pentagon Radar & Bubble Chart tetap sama) ...
-        # (Kode di atas sudah Anda miliki, silakan pertahankan)
+        cols_pentagon = [
+            'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
+            'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
+            'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]', 
+            'Skoring Pentagon Analisis [P4- Operasional]', 
+            'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
+        ]
+        
+        def clean_and_map(val):
+            val_str = str(val).strip().lower()
+            if any(x in val_str for x in ['rendah', 'low', '1']): return 1
+            if any(x in val_str for x in ['cukup', 'medium', '2']): return 2
+            if any(x in val_str for x in ['sedang', '3']): return 3
+            if any(x in val_str for x in ['baik', 'high', '4']): return 4
+            if any(x in val_str for x in ['sangat baik', 'excellent', '5']): return 5
+            return 0
+
+        for col in cols_pentagon:
+            if col in df.columns: df[col] = df[col].apply(clean_and_map)
+        
+        avg_scores = df[cols_pentagon].mean().values
+        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+        
+        fig_radar = go.Figure(go.Scatterpolar(r=avg_scores, theta=categories, fill='toself'))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])), title="Rata-rata Skor Pentagon")
+        st.plotly_chart(fig_radar, use_container_width=True)
+
+        st.subheader("📈 Hubungan Risiko vs Kerugian Finansial")
+        fig_bubble = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+                                size='Implementation Risk Maturity', color='Departemen Divisi/Area', 
+                                hover_name='Departemen Divisi/Area', size_max=40, template="plotly_white")
+        st.plotly_chart(fig_bubble, use_container_width=True)
 
     # Tab 3: AI Analyst
     with tab3:
-        # ... (kode AI tetap sama) ...
+        st.subheader("🤖 AI Root Cause Analysis")
+        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        if user_api_key and "Detail Temuan Ketidaksesuaian" in df.columns:
+            try:
+                genai.configure(api_key=user_api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                if st.button("Generate Analisis"):
+                    with st.spinner('AI sedang menganalisis...'):
+                        response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan berikut: {selected}")
+                        st.markdown(response.text)
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat memanggil AI: {e}")
