@@ -82,19 +82,24 @@ if uploaded_file is not None:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
         
-        if "Detail Temuan Ketidaksesuaian" in df.columns:
-            selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-            
-            if st.button("Generate Analisis AI"):
-                if not user_api_key:
-                    st.warning("Mohon masukkan API Key terlebih dahulu!")
+        if user_api_key:
+            try:
+                genai.configure(api_key=user_api_key)
+                # Kode Detektif: Mencari model yang tersedia
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                st.write("Model yang tersedia di akun Anda:", models)
+                
+                # Pilih model pertama yang tersedia dari daftar
+                if models:
+                    model_name = st.selectbox("Pilih Model yang tersedia:", models)
+                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                    
+                    if st.button("Generate Analisis AI"):
+                        model = genai.GenerativeModel(model_name)
+                        response = model.generate_content(f"Analisis akar masalah: {selected}")
+                        st.markdown(response.text)
                 else:
-                    try:
-                        genai.configure(api_key=user_api_key)
-                        model = genai.GenerativeModel('gemini-pro')
-                        with st.spinner('AI sedang menganalisis...'):
-                            response = model.generate_content(f"Berikan analisis akar masalah dan rekomendasi untuk temuan audit berikut: {selected}")
-                            st.markdown("### Hasil Analisis AI:")
-                            st.markdown(response.text)
-                    except Exception as e:
-                        st.error(f"Gagal menghubungi AI. Pastikan API Key valid. Detail error: {e}")
+                    st.error("Tidak ada model yang ditemukan untuk API Key ini.")
+            except Exception as e:
+                st.error(f"Error: {e}")
+                        
