@@ -15,6 +15,15 @@ if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
+        
+        # --- FUNGSI PEMBERSIH DATA KERUGIAN ---
+        # Membersihkan simbol Rp, titik, dan koma agar bisa dihitung oleh grafik
+        target_col = 'Estimasi Kerugian Finansial Atas Temuan Audit'
+        if target_col in df.columns:
+            df[target_col] = pd.to_numeric(
+                df[target_col].replace(r'[Rp,.]', '', regex=True), 
+                errors='coerce'
+            ).fillna(0)
     except Exception as e:
         st.error(f"Gagal membaca file: {e}")
         st.stop()
@@ -37,12 +46,14 @@ if uploaded_file is not None:
 
         with col2:
             st.subheader("Estimasi Kerugian Per Departemen")
-            df_kerugian = df.groupby('Departemen Divisi/Area')['Estimasi Kerugian Finansial Atas Temuan Audit'].sum().reset_index()
-            df_kerugian = df_kerugian.sort_values(by='Estimasi Kerugian Finansial Atas Temuan Audit', ascending=False)
-            colors_pie = ['red' if i == 0 else 'lightgrey' for i in range(len(df_kerugian))]
-            fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', values='Estimasi Kerugian Finansial Atas Temuan Audit')
-            fig_pie.update_traces(marker=dict(colors=colors_pie))
-            st.plotly_chart(fig_pie, use_container_width=True)
+            df_kerugian = df.groupby('Departemen Divisi/Area')[target_col].sum().reset_index()
+            df_kerugian = df_kerugian.sort_values(by=target_col, ascending=False)
+            
+            if df_kerugian[target_col].sum() > 0:
+                fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', values=target_col)
+                st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.warning("Data estimasi kerugian tidak ditemukan/nol.")
 
     # Tab 2: Pentagon & Risk
     with tab2:
@@ -75,7 +86,7 @@ if uploaded_file is not None:
         st.plotly_chart(fig_radar, use_container_width=True)
 
         st.subheader("📈 Hubungan Risiko vs Kerugian Finansial")
-        fig_bubble = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+        fig_bubble = px.scatter(df, x='Implementation Risk Maturity', y=target_col, 
                                 size='Implementation Risk Maturity', color='Departemen Divisi/Area', 
                                 hover_name='Departemen Divisi/Area', size_max=40, template="plotly_white")
         st.plotly_chart(fig_bubble, use_container_width=True)
@@ -98,12 +109,8 @@ if uploaded_file is not None:
                         if st.button("Generate Analisis AI"):
                             with st.spinner("AI sedang berpikir..."):
                                 model = genai.GenerativeModel(model_name)
-                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan untuk temuan berikut: {selected}")
+                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan untuk temuan: {selected}")
                                 st.markdown("### Hasil Analisis AI:")
                                 st.markdown(response.text)
-                    else:
-                        st.error("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan.")
-                else:
-                    st.warning("Tidak ada model yang tersedia.")
             except Exception as e:
                 st.error(f"Error AI: {e}")
