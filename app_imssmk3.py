@@ -46,7 +46,7 @@ if uploaded_file is not None:
             fig2.update_layout(xaxis={'categoryorder':'total descending'})
             st.plotly_chart(fig2, use_container_width=True)
 
-   with tab2:
+     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
         
         # --- Bagian 1: Pentagon Analysis (Radar Chart) ---
