@@ -43,17 +43,20 @@ if uploaded_file is not None:
         ]
         
         def clean_and_map(val):
-            val_str = str(val).strip().lower()
-            if 'rendah' in val_str: return 1
-            if 'cukup' in val_str: return 2
-            if 'sedang' in val_str: return 3
-            if 'sangat baik' in val_str: return 5
-            if 'baik' in val_str: return 4
-            return 0
+    val_str = str(val).strip().lower()
+    # Gunakan kata kunci yang paling umum ditemukan di data audit
+    if any(x in val_str for x in ['rendah', 'low', '1']): return 1
+    if any(x in val_str for x in ['cukup', 'medium', '2']): return 2
+    if any(x in val_str for x in ['sedang', '3']): return 3
+    if any(x in val_str for x in ['baik', 'high', '4']): return 4
+    if any(x in val_str for x in ['sangat baik', 'excellent', '5']): return 5
+    return 0
 
         for col in cols_pentagon:
             if col in df.columns:
                 df[col] = df[col].apply(clean_and_map)
+                st.write("Cek nilai unik di kolom Pentagon (Pastikan angka 1-5 muncul):")
+st.write(df[cols_pentagon[0]].unique()) # Ini akan menunjukkan nilai apa saja yang dibaca Python
         
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
