@@ -1,40 +1,58 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import google.generativeai as genai
 
-# 1. Load Data
-# Ganti 'data_temuan.csv' dengan nama file asli Bapak
-uploaded_file = st.file_uploader("Upload file CSV data temuan:", type=["csv"])
+# Setup Halaman
+st.set_page_config(layout="wide")
+st.title("SRIS Dashboard Analysis")
+
+# Upload Data
+uploaded_file = st.file_uploader("Upload file CSV/Excel data temuan:", type=["csv", "xlsx"])
 
 if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    
-    st.title("Dashboard Analisis SRIS")
-    
-    # Membuat 2 kolom untuk layout grafik agar rapi
-    col1, col2 = st.columns(2)
-    
-    # GRAFIK 1: Distribusi temuan berdasarkan departemen
-    with col1:
-        st.subheader("1. Distribusi Temuan per Departemen")
-        fig1 = px.pie(df, names='Departemen', title='Persentase Temuan per Dept')
-        st.plotly_chart(fig1, use_container_width=True)
-        
-    # GRAFIK 2: Estimasi kerugian berdasarkan temuan
-    with col2:
-        st.subheader("2. Estimasi Kerugian")
-        fig2 = px.bar(df, x='Departemen', y='Kerugian', title='Total Estimasi Kerugian')
-        st.plotly_chart(fig2, use_container_width=True)
-        
-    # GRAFIK 3: Implementation risk maturity
-    st.subheader("3. Risk Maturity Level")
-    fig3 = px.box(df, x='Departemen', y='Risk_Maturity_Score', title='Tingkat Kematangan Risiko')
-    st.plotly_chart(fig3, use_container_width=True)
-    
-    # GRAFIK 4: Pengendalian resiko
-    st.subheader("4. Efektivitas Pengendalian Risiko")
-    fig4 = px.scatter(df, x='Risk_Maturity_Score', y='Kerugian', color='Departemen', size='Kerugian')
-    st.plotly_chart(fig4, use_container_width=True)
+    # Membaca data
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
 
+    # Tab Dashboard
+    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
+
+    with tab1:
+        st.subheader("Analisis Temuan")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig1 = px.pie(df, names='Departemen', title='Distribusi Temuan per Departemen')
+            st.plotly_chart(fig1, use_container_width=True)
+        with col2:
+            fig2 = px.bar(df, x='Departemen', y='Kerugian', title='Estimasi Kerugian')
+            st.plotly_chart(fig2, use_container_width=True)
+
+    with tab2:
+        st.subheader("Risk & Maturity")
+        fig3 = px.box(df, x='Departemen', y='Risk_Maturity_Score', title='Risk Maturity Level')
+        st.plotly_chart(fig3, use_container_width=True)
+        
+        fig4 = px.scatter(df, x='Risk_Maturity_Score', y='Kerugian', color='Departemen', title='Pengendalian Risiko')
+        st.plotly_chart(fig4, use_container_width=True)
+
+    with tab3:
+        st.subheader("AI Root Cause Analysis & CAPA")
+        user_api_key = st.text_input("Masukkan API Key:", type="password")
+        
+        temuan_col = "Detail Temuan Ketidaksesuaian"
+        if temuan_col in df.columns:
+            selected_temuan = st.selectbox("Pilih Temuan:", df[temuan_col].dropna().unique())
+            
+            if st.button("Generate Analisis AI"):
+                if not user_api_key:
+                    st.warning("Masukkan API Key dulu!")
+                else:
+                    try:
+                        genai.configure(api_key=user_api_key)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
+                        st.markdown(response.text)
+                    except Exception as e:
+                        st.error(f"Error: {e}")
 else:
-    st.info("Silakan upload file CSV untuk melihat dasbor.")
+    st.info("Silakan upload file untuk melihat dasbor.")
