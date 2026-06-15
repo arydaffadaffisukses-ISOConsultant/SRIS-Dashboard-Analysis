@@ -30,7 +30,20 @@ if uploaded_file is not None:
             fig1 = px.pie(df, names='Departemen Divisi/Area', title='Distribusi Temuan')
             st.plotly_chart(fig1, use_container_width=True)
         with col2:
-            fig2 = px.bar(df, x='Departemen Divisi/Area', y='Estimasi Kerugian Finansial Atas Temuan Audit', title='Estimasi Kerugian')
+            st.subheader("Estimasi Kerugian")
+            
+            # Kita hitung dulu jumlah temuan per kategori untuk setiap departemen
+            # Ini akan membuat grafik jauh lebih kaya warna
+            fig2 = px.histogram(
+                df, 
+                x='Departemen Divisi/Area', 
+                color='Estimasi Kerugian Finansial Atas Temuan Audit',
+                barmode='group', # Mengelompokkan batang agar berdampingan
+                title='Komposisi Kerugian per Departemen',
+                color_discrete_sequence=px.colors.qualitative.Set2 # Pilihan palet warna yang menarik
+            )
+            
+            fig2.update_layout(xaxis={'categoryorder':'total descending'})
             st.plotly_chart(fig2, use_container_width=True)
 
     with tab2:
