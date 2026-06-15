@@ -1,6 +1,7 @@
 streamlit
 pandas
-plotly
-google-generativeai
-pypdf
+numpy
+matplotlib
+openpyxl
+google-genai
 openpyxl
