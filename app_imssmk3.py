@@ -4,11 +4,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
 
-# 1. Konfigurasi Awal
 st.set_page_config(layout="wide")
 st.title("SRIS Dashboard Analysis")
 
-# 2. Upload Data
 uploaded_file = st.file_uploader("Upload file CSV/Excel:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
@@ -16,10 +14,8 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
     df.columns = df.columns.str.strip()
 
-    # 3. DEFINISI TAB HARUS DI SINI (Sebelum 'with tab2')
+    # Perhatikan: Baris di bawah ini harus menjorok 4 spasi dari margin kiri
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
-
-   tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
     with tab1:
         st.subheader("Analisis Temuan")
@@ -34,7 +30,7 @@ if uploaded_file is not None:
 
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
-        # Radar Chart
+        # Pentagon Radar Chart
         cols_pentagon = ['Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]', 'Skoring Pentagon Analisis [P4- Operasional]', 'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]']
         avg_scores = df[cols_pentagon].mean().values
         fig_radar = go.Figure(data=go.Scatterpolar(r=avg_scores, theta=['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi'], fill='toself'))
@@ -65,5 +61,3 @@ if uploaded_file is not None:
                         st.error(f"Error AI: {e}")
                 else:
                     st.warning("Mohon masukkan API Key.")
-else:
-    st.info("Silakan upload file untuk memulai.")
