@@ -78,12 +78,24 @@ if uploaded_file is not None:
         st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
-        st.subheader("AI Root Cause Analysis")
+        st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        
         if "Detail Temuan Ketidaksesuaian" in df.columns:
             selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-            if st.button("Generate Analisis AI") and user_api_key:
-                genai.configure(api_key=user_api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(f"Analisis akar masalah: {selected}")
-                st.markdown(response.text)
+            
+            if st.button("Generate Analisis AI"):
+                if not user_api_key:
+                    st.warning("Mohon masukkan API Key terlebih dahulu!")
+                else:
+                    try:
+                        genai.configure(api_key=user_api_key)
+                        # Menggunakan nama model yang lebih umum dan stabil
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        
+                        with st.spinner('AI sedang menganalisis...'):
+                            response = model.generate_content(f"Berikan analisis akar masalah dan rekomendasi untuk temuan audit berikut: {selected}")
+                            st.markdown("### Hasil Analisis AI:")
+                            st.markdown(response.text)
+                    except Exception as e:
+                        st.error(f"Gagal menghubungi AI. Pastikan API Key valid. Detail error: {e}")
