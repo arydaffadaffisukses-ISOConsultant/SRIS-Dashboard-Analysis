@@ -3,12 +3,20 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
+try:
+    from pypdf import PdfReader
+except ImportError:
+    PdfReader = None
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="SRIS Dashboard", layout="wide")
 st.title("📊 SRIS Dashboard Analysis")
 
-uploaded_file = st.file_uploader("Upload file CSV/Excel:", type=["csv", "xlsx"])
+# Inisialisasi Session State
+if 'regulasi_text' not in st.session_state:
+    st.session_state['regulasi_text'] = ""
+
+uploaded_file = st.file_uploader("Upload file CSV/Excel Data Audit:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
@@ -18,7 +26,7 @@ if uploaded_file is not None:
         st.error(f"Gagal membaca file: {e}")
         st.stop()
 
-    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "🕸️ Pentagon & Risk", "🤖 AI Analyst", "📜 Regulasi PDF"])
 
     with tab1:
         st.subheader("Analisis Temuan")
@@ -27,12 +35,13 @@ if uploaded_file is not None:
             fig1 = px.pie(df, names='Departemen Divisi/Area', title='Distribusi Temuan')
             st.plotly_chart(fig1, use_container_width=True)
         with col2:
-            fig2 = px.histogram(df, x='Departemen Divisi/Area', color='Estimasi Kerugian Finansial Atas Temuan Audit')
-            st.plotly_chart(fig2, use_container_width=True)
+            st.subheader("Trend Estimasi Kerugian")
+            fig_line = px.line(df, x='Departemen Divisi/Area', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+                               color='Departemen Divisi/Area', markers=True, template="plotly_white")
+            st.plotly_chart(fig_line, use_container_width=True)
 
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
-        
         cols_pentagon = [
             'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
             'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
@@ -51,44 +60,38 @@ if uploaded_file is not None:
             return 0
 
         for col in cols_pentagon:
-            if col in df.columns:
-                df[col] = df[col].apply(clean_and_map)
-        
-        # Tampilkan data agar Bapak bisa memastikan angka sudah benar
-        st.write("Data yang terdeteksi (1-5):")
-        st.write(df[cols_pentagon].head())
+            if col in df.columns: df[col] = df[col].apply(clean_and_map)
         
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
         
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(
-            r=avg_scores, theta=categories, fill='toself',
-            fillcolor='rgba(99, 110, 250, 0.4)',
-            line=dict(color='#636EFA', width=3),
-            marker=dict(size=8)
-        ))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Skor Pentagon")
+        fig_radar = go.Figure(go.Scatterpolar(r=avg_scores, theta=categories, fill='toself'))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])), title="Rata-rata Skor Pentagon")
         st.plotly_chart(fig_radar, use_container_width=True)
-        
-        fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
-        st.plotly_chart(fig3, use_container_width=True)
+
+        st.subheader("📈 Hubungan Risiko vs Kerugian")
+        fig_bubble = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+                                size='Implementation Risk Maturity', color='Departemen Divisi/Area', template="plotly_white")
+        st.plotly_chart(fig_bubble, use_container_width=True)
 
     with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
-        
-        if user_api_key:
-            try:
-                genai.configure(api_key=user_api_key)
-                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                model_name = st.selectbox("Pilih Model AI:", models)
-                
-                if "Detail Temuan Ketidaksesuaian" in df.columns:
-                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-                    if st.button("Generate Analisis AI"):
-                        model = genai.GenerativeModel(model_name)
-                        response = model.generate_content(f"Analisis akar masalah: {selected}")
-                        st.markdown(response.text)
-            except Exception as e:
-                st.error(f"Error AI: {e}")
+        if user_api_key and "Detail Temuan Ketidaksesuaian" in df.columns:
+            genai.configure(api_key=user_api_key)
+            model = genai.GenerativeModel('gemini-pro')
+            selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+            if st.button("Generate Analisis"):
+                prompt = f"Analisis akar masalah: {selected}. Regulasi acuan: {st.session_state['regulasi_text'][:2000]}"
+                st.write(model.generate_content(prompt).text)
+
+    with tab4:
+        st.subheader("📜 Upload PDF Regulasi")
+        if PdfReader:
+            pdf_file = st.file_uploader("Upload PDF:", type=["pdf"])
+            if pdf_file:
+                reader = PdfReader(pdf_file)
+                st.session_state['regulasi_text'] = "".join([p.extract_text() for p in reader.pages])
+                st.success("Regulasi dimuat!")
+        else:
+            st.warning("Instalasi pypdf tidak ditemukan.")
