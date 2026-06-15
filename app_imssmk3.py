@@ -47,28 +47,28 @@ if uploaded_file:
         st.plotly_chart(fig_radar, use_container_width=True)
         st.dataframe(df, use_container_width=True)
    with tab3:
-        st.subheader("AI Root Cause Analysis & CAPA")
+       st.subheader("AI Root Cause Analysis & CAPA")
         
-        # Form input API Key agar Bapak bisa copy-paste langsung
-        user_api_key = st.text_input("Masukkan API Key Anda:", type="password")
+       # Form input API Key agar Bapak bisa copy-paste langsung
+       user_api_key = st.text_input("Masukkan API Key Anda:", type="password")
         
-        temuan_col = "Detail Temuan Ketidaksesuaian"
+       temuan_col = "Detail Temuan Ketidaksesuaian"
         
-        if temuan_col in df.columns:
-            selected_temuan = st.selectbox("Pilih Temuan untuk dianalisis:", df[temuan_col].dropna().unique())
+       if temuan_col in df.columns:
+           selected_temuan = st.selectbox("Pilih Temuan untuk dianalisis:", df[temuan_col].dropna().unique())
             
-            if st.button("Generate Analisis AI"):
-                if not user_api_key:
-                    st.warning("Mohon masukkan API Key terlebih dahulu!")
-                else:
-                    try:
-                        genai.configure(api_key=user_api_key)
-                        # Menggunakan model yang paling umum
-                        model = genai.GenerativeModel('gemini-1.5-flash')
-                        response = model.generate_content(f"Analisis akar masalah dan buatkan rencana CAPA untuk temuan: {selected_temuan}")
-                        st.markdown(response.text)
-                    except Exception as e:
-                        st.error(f"Terjadi kesalahan: {e}")
+        if st.button("Generate Analisis AI"):
+           if not user_api_key:
+               st.warning("Mohon masukkan API Key terlebih dahulu!")
+           else:
+               try:
+                   genai.configure(api_key=user_api_key)
+                   # Menggunakan model yang paling umum
+                   model = genai.GenerativeModel('gemini-1.5-flash')
+                   response = model.generate_content(f"Analisis akar masalah dan buatkan rencana CAPA untuk temuan: {selected_temuan}")
+                   st.markdown(response.text)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan: {e}")
         else:
             st.error(f"Kolom '{temuan_col}' tidak ditemukan.")
 
