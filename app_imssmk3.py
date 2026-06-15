@@ -33,7 +33,7 @@ if uploaded_file is not None:
             fig2 = px.bar(df, x='Departemen Divisi/Area', y='Estimasi Kerugian Finansial Atas Temuan Audit', title='Estimasi Kerugian')
             st.plotly_chart(fig2, use_container_width=True)
 
-   with tab2:
+     with tab2:
         st.subheader("Risk & Maturity")
         
         # Menggunakan Bar Chart agar ada batang yang berwarna
