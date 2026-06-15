@@ -51,7 +51,6 @@ if uploaded_file is not None:
                     st.warning("Masukkan API Key terlebih dahulu!")
                 else:
                     try:
-                      try:
                         genai.configure(api_key=user_api_key)
                         
                         # BARIS BARU: Mengecek daftar model yang tersedia
