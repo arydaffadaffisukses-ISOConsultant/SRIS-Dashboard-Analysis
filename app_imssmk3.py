@@ -56,7 +56,7 @@ if uploaded_file:
             if st.button("Generate Analisis AI"):
                 # Baris di bawah ini dipastikan sudah di-indentasi (4 spasi)
                 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-                model = genai.GenerativeModel('gemini-pro')
+                model = genai.GenerativeModel('gemini-1.5-pro')
                 response = model.generate_content(f"Analisis akar masalah dan buatkan rencana CAPA untuk temuan: {selected_temuan}")
                 st.markdown(response.text)
         else:
