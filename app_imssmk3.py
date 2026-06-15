@@ -47,46 +47,46 @@ if uploaded_file is not None:
             st.plotly_chart(fig2, use_container_width=True)
 
      with tab2:
-        st.subheader("🕸️ Pentagon & Risk Analysis")
+         st.subheader("🕸️ Pentagon & Risk Analysis")
         
-        # --- Bagian 1: Pentagon Analysis (Radar Chart) ---
-        st.markdown("### Pentagon Analysis Radar")
-        # Mengambil rata-rata nilai skoring pentagon dari data (asumsi kolom sudah angka)
-        # Jika kolom Bapak namanya berbeda, silakan sesuaikan
-        cols_pentagon = [
-            'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
-            'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]',
-            'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]',
-            'Skoring Pentagon Analisis [P4- Operasional]',
-            'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
-        ]
+         # --- Bagian 1: Pentagon Analysis (Radar Chart) ---
+         st.markdown("### Pentagon Analysis Radar")
+         # Mengambil rata-rata nilai skoring pentagon dari data (asumsi kolom sudah angka)
+         # Jika kolom Bapak namanya berbeda, silakan sesuaikan
+         cols_pentagon = [
+             'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
+             'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]',
+             'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]',
+             'Skoring Pentagon Analisis [P4- Operasional]',
+             'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
+         ]
         
-        # Menghitung rata-rata skor per aspek
-        avg_scores = df[cols_pentagon].mean().values
-        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+         # Menghitung rata-rata skor per aspek
+         avg_scores = df[cols_pentagon].mean().values
+         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
         
-        import plotly.graph_objects as go
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(
-              r=avg_scores,
-              theta=categories,
-              fill='toself',
-              line_color='#636EFA',
+         import plotly.graph_objects as go
+         fig_radar = go.Figure()
+         fig_radar.add_trace(go.Scatterpolar(
+               r=avg_scores,
+               theta=categories,
+               fill='toself',
+               line_color='#636EFA',
               marker=dict(size=8)
-        ))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=False)
-        st.plotly_chart(fig_radar, use_container_width=True)
+         ))
+         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=False)
+         st.plotly_chart(fig_radar, use_container_width=True)
 
-        # --- Bagian 2: Implementation Risk Maturity ---
-        st.markdown("### Implementation Risk Maturity")
-        fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', 
-                      title='Tingkat Kematangan Risiko per Departemen',
-                      color='Departemen Divisi/Area')
-        st.plotly_chart(fig3, use_container_width=True)
+         # --- Bagian 2: Implementation Risk Maturity ---
+         st.markdown("### Implementation Risk Maturity")
+         fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', 
+                       title='Tingkat Kematangan Risiko per Departemen',
+                       color='Departemen Divisi/Area')
+         st.plotly_chart(fig3, use_container_width=True)
         
-        # --- Bagian 3: Hubungan Risiko & Kerugian ---
-        st.markdown("### Hubungan Risiko & Kerugian")
-        fig4 = px.scatter(
+         # --- Bagian 3: Hubungan Risiko & Kerugian ---
+         st.markdown("### Hubungan Risiko & Kerugian")
+         fig4 = px.scatter(
             df, 
             x='Implementation Risk Maturity', 
             y='Estimasi Kerugian Finansial Atas Temuan Audit', 
