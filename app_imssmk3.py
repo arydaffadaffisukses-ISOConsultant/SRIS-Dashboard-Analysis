@@ -13,6 +13,7 @@ uploaded_file = st.sidebar.file_uploader("Upload Database (Excel/CSV):", type=["
 if uploaded_file:
     df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
     df.columns = [col.strip() for col in df.columns]
+
 # Pastikan tidak ada spasi di awal baris untuk definisi tab di bawah ini
 tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
