@@ -36,11 +36,32 @@ if uploaded_file is not None:
             st.plotly_chart(fig_bar, use_container_width=True)
 
         with col2:
-            st.subheader("Estimasi Kerugian Per Departemen")
+            st.subheader("Top 3 Departemen dengan Kerugian Tertinggi")
+            
+            # Agregasi kerugian per departemen
             df_kerugian = df.groupby('Departemen Divisi/Area')['Estimasi Kerugian Finansial Atas Temuan Audit'].sum().reset_index()
             df_kerugian = df_kerugian.sort_values(by='Estimasi Kerugian Finansial Atas Temuan Audit', ascending=False)
-            colors_pie = ['red' if i == 0 else 'lightgrey' for i in range(len(df_kerugian))]
-            fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', values='Estimasi Kerugian Finansial Atas Temuan Audit')
+            
+            # Logika untuk mengambil 3 besar dan sisanya dijadikan "Lainnya"
+            if len(df_kerugian) > 3:
+                top_3 = df_kerugian.head(3).copy()
+                others = pd.DataFrame({
+                    'Departemen Divisi/Area': ['Lainnya'],
+                    'Estimasi Kerugian Finansial Atas Temuan Audit': [df_kerugian.iloc[3:]['Estimasi Kerugian Finansial Atas Temuan Audit'].sum()]
+                })
+                df_plot = pd.concat([top_3, others])
+            else:
+                df_plot = df_kerugian
+
+            # Warna: Merah untuk top 3, abu-abu untuk "Lainnya"
+            colors_pie = ['red' if i < 3 else 'lightgrey' for i in range(len(df_plot))]
+            
+            fig_pie = px.pie(
+                df_plot, 
+                names='Departemen Divisi/Area', 
+                values='Estimasi Kerugian Finansial Atas Temuan Audit',
+                title="Proporsi Kerugian (Top 3 vs Lainnya)"
+            )
             fig_pie.update_traces(marker=dict(colors=colors_pie))
             st.plotly_chart(fig_pie, use_container_width=True)
 
