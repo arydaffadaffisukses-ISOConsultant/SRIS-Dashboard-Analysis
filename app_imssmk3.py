@@ -34,17 +34,17 @@ if uploaded_file is not None:
             st.plotly_chart(fig2, use_container_width=True)
 
      with tab2:
-        st.subheader("Risk & Maturity")
+         st.subheader("Risk & Maturity")
+         
+         # Menggunakan Bar Chart agar ada batang yang berwarna
+         fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', 
+                       title='Tingkat Kematangan Risiko per Departemen',
+                       color='Departemen Divisi/Area') # Menambahkan warna per departemen
+         st.plotly_chart(fig3, use_container_width=True)
         
-        # Menggunakan Bar Chart agar ada batang yang berwarna
-        fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', 
-                      title='Tingkat Kematangan Risiko per Departemen',
-                      color='Departemen Divisi/Area') # Menambahkan warna per departemen
-        st.plotly_chart(fig3, use_container_width=True)
-        
-        fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
-                          color='Departemen Divisi/Area', title='Hubungan Risiko & Kerugian')
-        st.plotly_chart(fig4, use_container_width=True)
+         fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+                           color='Departemen Divisi/Area', title='Hubungan Risiko & Kerugian')
+         st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
         st.subheader("AI Root Cause Analysis & CAPA")
