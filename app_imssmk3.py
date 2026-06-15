@@ -31,10 +31,8 @@ if uploaded_file is not None:
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
         
-        # 1. Mapping Teks ke Angka (Penerjemah)
-        # Sesuaikan isi 'mapping' ini dengan kata-kata yang ada di file Excel Bapak
+        # DEFINISI VARIABEL HARUS ADA DI SINI agar dikenali oleh radar chart di bawahnya
         mapping = {'Rendah': 1, 'Cukup': 2, 'Sedang': 3, 'Baik': 4, 'Sangat Baik': 5}
-        
         cols_pentagon = [
             'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
             'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
@@ -43,49 +41,27 @@ if uploaded_file is not None:
             'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
         ]
         
-        # Mengonversi kolom teks menjadi angka
+        # Konversi ke angka
         for col in cols_pentagon:
             if col in df.columns:
-                df[col] = df[col].map(mapping).fillna(0) # Jika teks tidak cocok, jadi 0
+                df[col] = df[col].map(mapping).fillna(0)
+        
+        avg_scores = df[cols_pentagon].mean().values
+        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
 
         # Radar Chart
-        # 2. Radar Chart yang Lebih Menarik & Berwarna
         fig_radar = go.Figure()
-
-        # Menambahkan data dengan warna yang lebih elegan (Indigo dengan transparansi)
         fig_radar.add_trace(go.Scatterpolar(
               r=avg_scores,
               theta=categories,
-              fill='toself',           # Mengisi area dalam dengan warna
-              fillcolor='rgba(99, 110, 250, 0.5)', # Warna biru dengan transparansi 50%
-              line=dict(color='#636EFA', width=3), # Garis tepi lebih tebal
-              marker=dict(size=8, color='#636EFA') # Titik data yang menonjol
+              fill='toself',
+              fillcolor='rgba(99, 110, 250, 0.5)',
+              line=dict(color='#636EFA', width=3)
         ))
-
-        # Mengatur tampilan background agar bersih dan modern
-        fig_radar.update_layout(
-            polar=dict(
-                radialaxis=dict(visible=True, range=[0, 5], gridcolor='lightgray'),
-                angularaxis=dict(gridcolor='lightgray')
-            ),
-            title="Analisis Pentagon (Rata-rata)",
-            paper_bgcolor='rgba(0,0,0,0)', # Background transparan agar menyatu dengan dasbor
-            plot_bgcolor='rgba(0,0,0,0)'
-        )
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Analisis Pentagon (Rata-rata)")
         st.plotly_chart(fig_radar, use_container_width=True)
         
-        # Risk & Maturity (Memastikan kolom ini juga angka)
-        # Jika kolom ini juga berupa teks, ganti angka 4 di bawah dengan cara yang sama seperti di atas
-        st.markdown("### Implementation Risk Maturity")
-        fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
-        st.plotly_chart(fig3, use_container_width=True)
-        
-        # Bubble Chart
-        st.markdown("### Hubungan Risiko & Kerugian")
-        fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
-                          color='Departemen Divisi/Area', size='Implementation Risk Maturity', 
-                          hover_data=['Detail Temuan Ketidaksesuaian'], template="plotly_white")
-        st.plotly_chart(fig4, use_container_width=True)
+        # Grafik lainnya... (tambahkan fig3 dan fig4 di sini)
 
     with tab3:
         st.subheader("AI Root Cause Analysis")
