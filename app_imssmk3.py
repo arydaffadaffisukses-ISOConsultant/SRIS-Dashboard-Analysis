@@ -51,7 +51,20 @@ if uploaded_file is not None:
                     st.warning("Masukkan API Key terlebih dahulu!")
                 else:
                     try:
+                      try:
                         genai.configure(api_key=user_api_key)
+                        
+                        # BARIS BARU: Mengecek daftar model yang tersedia
+                        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_methods]
+                        st.write("Model yang tersedia:", models)
+                        
+                        # Gunakan salah satu dari daftar yang muncul nanti
+                        model = genai.GenerativeModel(models[0]) 
+                        
+                        response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
+                        st.markdown(response.text)
+                    except Exception as e:
+                        st.error(f"Error AI: {e}")  genai.configure(api_key=user_api_key)
                         model = genai.GenerativeModel('gemini-pro')
                         response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
                         st.markdown(response.text)
