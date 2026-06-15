@@ -30,10 +30,7 @@ if uploaded_file is not None:
             st.subheader("Temuan Per Departemen")
             df_temuan = df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah')
             df_temuan = df_temuan.sort_values(by='Jumlah', ascending=False)
-            
-            # Warna: Merah untuk tertinggi, biru untuk lainnya
             colors = ['red' if i == 0 else 'royalblue' for i in range(len(df_temuan))]
-            
             fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color_discrete_sequence=['royalblue'])
             fig_bar.update_traces(marker_color=colors)
             st.plotly_chart(fig_bar, use_container_width=True)
@@ -42,9 +39,7 @@ if uploaded_file is not None:
             st.subheader("Estimasi Kerugian Per Departemen")
             df_kerugian = df.groupby('Departemen Divisi/Area')['Estimasi Kerugian Finansial Atas Temuan Audit'].sum().reset_index()
             df_kerugian = df_kerugian.sort_values(by='Estimasi Kerugian Finansial Atas Temuan Audit', ascending=False)
-            
             colors_pie = ['red' if i == 0 else 'lightgrey' for i in range(len(df_kerugian))]
-            
             fig_pie = px.pie(df_kerugian, names='Departemen Divisi/Area', values='Estimasi Kerugian Finansial Atas Temuan Audit')
             fig_pie.update_traces(marker=dict(colors=colors_pie))
             st.plotly_chart(fig_pie, use_container_width=True)
@@ -87,39 +82,28 @@ if uploaded_file is not None:
 
     # Tab 3: AI Analyst
     with tab3:
-        with tab3:
-    st.subheader("🤖 AI Root Cause Analysis")
-    user_api_key = st.text_input("Masukkan Google API Key:", type="password")
-    
-    if user_api_key:
-        try:
-            genai.configure(api_key=user_api_key)
-            
-            # Mendapatkan daftar model yang mendukung generateContent
-            # Kita filter agar hanya mengambil nama model yang valid
-            models_info = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            model_names = [m.name for m in models_info]
-            
-            if model_names:
-                st.success(f"Ditemukan {len(model_names)} model yang tersedia.")
-                model_name = st.selectbox("Pilih Model:", model_names, index=0)
+        st.subheader("🤖 AI Root Cause Analysis")
+        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        
+        if user_api_key:
+            try:
+                genai.configure(api_key=user_api_key)
+                models_info = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                model_names = [m.name for m in models_info]
                 
-                # Cek apakah kolom temuan tersedia di dataframe
-                if "Detail Temuan Ketidaksesuaian" in df.columns:
-                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-                    
-                    if st.button("Generate Analisis AI"):
-                        with st.spinner("AI sedang berpikir..."):
-                            # Inisialisasi model
-                            model = genai.GenerativeModel(model_name)
-                            # Generate konten
-                            response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan untuk temuan berikut: {selected}")
-                            st.markdown("### Hasil Analisis AI:")
-                            st.markdown(response.text)
+                if model_names:
+                    model_name = st.selectbox("Pilih Model:", model_names, index=0)
+                    if "Detail Temuan Ketidaksesuaian" in df.columns:
+                        selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                        if st.button("Generate Analisis AI"):
+                            with st.spinner("AI sedang berpikir..."):
+                                model = genai.GenerativeModel(model_name)
+                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan untuk temuan berikut: {selected}")
+                                st.markdown("### Hasil Analisis AI:")
+                                st.markdown(response.text)
+                    else:
+                        st.error("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan.")
                 else:
-                    st.error("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan di file Anda.")
-            else:
-                st.warning("Tidak ada model yang tersedia. Pastikan API Key Anda aktif dan memiliki kuota.")
-                
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat menghubungkan ke Google AI: {e}")
+                    st.warning("Tidak ada model yang tersedia.")
+            except Exception as e:
+                st.error(f"Error AI: {e}")
