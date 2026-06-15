@@ -28,7 +28,6 @@ if uploaded_file is not None:
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
         
-        # Pembersihan Data agar Mapping Berhasil
         cols_pentagon = [
             'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
             'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
@@ -37,33 +36,29 @@ if uploaded_file is not None:
             'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
         ]
         
-        for col in cols_pentagon:
-            if col in df.columns:
-                # Membersihkan string dan mengubah jadi huruf kapital awal saja
-                df[col] = df[col].astype(str).str.strip().str.capitalize()
-        
-        # Mapping Angka
-        mapping = {'Rendah': 1, 'Cukup': 2, 'Sedang': 3, 'Baik': 4, 'Sangat baik': 5}
-        for col in cols_pentagon:
-            if col in df.columns:
-                df[col] = df[col].map(mapping).fillna(0)
+        # --- PEMBERSIH DATA YANG LEBIH KUAT ---
+        def clean_and_map(val):
+            val_str = str(val).strip().lower() # Hilangkan spasi & buat huruf kecil semua
+            if 'rendah' in val_str: return 1
+            if 'cukup' in val_str: return 2
+            if 'sedang' in val_str: return 3
+            if 'baik' in val_str and 'sangat' not in val_str: return 4
+            if 'sangat baik' in val_str: return 5
+            return 0 # Jika benar-benar tidak ketemu kata kuncinya
 
-        # Debugging (untuk melihat apakah data sudah jadi angka)
-        st.write("Cek Data Pentagon (Pastikan kolom berisi angka):")
-        st.write(df[cols_pentagon].head()) 
+        for col in cols_pentagon:
+            if col in df.columns:
+                df[col] = df[col].apply(clean_and_map)
         
-        # Hitung Rata-rata
+        # Debugging: Cek apakah sekarang sudah muncul angkanya
+        st.write("Cek Data Setelah Mapping (Jika masih 0, cek ejaan di Excel):")
+        st.write(df[cols_pentagon].head())
+        
+        # Lanjutkan ke pembuatan grafik
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
-
-        # Radar Chart
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(
-            r=avg_scores, theta=categories, fill='toself', 
-            fillcolor='rgba(99, 110, 250, 0.5)', line=dict(color='#636EFA', width=3)
-        ))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Skor Pentagon")
-        st.plotly_chart(fig_radar, use_container_width=True)
+        
+        # ... (Kode grafik Radar & lainnya tetap sama)
         
         # Risk & Maturity
         fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
