@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 import pandas as pd # Jika Bapak menggunakan pandas
+
 # Pastikan tidak ada spasi di awal baris untuk definisi tab di bawah ini
 tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
