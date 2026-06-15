@@ -44,29 +44,31 @@ if uploaded_file is not None:
         st.subheader("AI Root Cause Analysis & CAPA")
         user_api_key = st.text_input("Masukkan API Key:", type="password")
         temuan_col = "Detail Temuan Ketidaksesuaian"
+        
         if temuan_col in df.columns:
             selected_temuan = st.selectbox("Pilih Temuan:", df[temuan_col].dropna().unique())
+            
             if st.button("Generate Analisis AI"):
                 if not user_api_key:
                     st.warning("Masukkan API Key terlebih dahulu!")
                 else:
                     try:
+                        # Langkah 1: Konfigurasi
                         genai.configure(api_key=user_api_key)
                         
-                        # BARIS BARU: Mengecek daftar model yang tersedia
-                        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_methods]
-                        st.write("Model yang tersedia:", models)
+                        # Langkah 2: Deteksi model yang tersedia
+                        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_methods]
                         
-                        # Gunakan salah satu dari daftar yang muncul nanti
-                        model = genai.GenerativeModel(models[0]) 
-                        
-                        response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
-                        st.markdown(response.text)
-                    except Exception as e:
-                        st.error(f"Error AI: {e}")  genai.configure(api_key=user_api_key)
-                        model = genai.GenerativeModel('gemini-pro')
-                        response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
-                        st.markdown(response.text)
+                        if not available_models:
+                            st.error("API Key tidak menemukan model yang tersedia. Pastikan kunci sudah benar dan aktif.")
+                        else:
+                            st.write("Menggunakan model:", available_models[0])
+                            model = genai.GenerativeModel(available_models[0])
+                            
+                            # Langkah 3: Generate
+                            response = model.generate_content(f"Analisis akar masalah dan rencana CAPA untuk: {selected_temuan}")
+                            st.markdown(response.text)
+                            
                     except Exception as e:
                         st.error(f"Error AI: {e}")
 
