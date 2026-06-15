@@ -28,9 +28,7 @@ if uploaded_file:
         # Membersihkan spasi di nama kolom
         df.columns = df.columns.str.strip()
         
-        # Menampilkan daftar kolom agar Bapak bisa melihat nama yang benar
-        st.write("Daftar kolom yang ditemukan di file Bapak:", df.columns.tolist())
-        
+       
         col1, col2 = st.columns(2)
         
         # Menggunakan kolom pertama untuk Pie Chart
