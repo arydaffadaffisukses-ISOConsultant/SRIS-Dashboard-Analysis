@@ -3,6 +3,8 @@ pandas
 numpy
 matplotlib
 seaborn
-plotly
 openpyxl
+plotly
 google-generativeai
+pypdf
+openpyx
