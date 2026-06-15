@@ -39,17 +39,12 @@ if uploaded_file is not None:
             'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]', 
             'Skoring Pentagon Analisis [P4- Operasional]', 
             'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
-        ]
-        
-        # Pastikan kolom adalah angka
+            # Pastikan kolom adalah angka
         for col in cols_pentagon:
             if col in df.columns:
                 df[col] = df[col].map(mapping).fillna(0)
         
-        avg_scores = df[cols_pentagon].mean().values
-        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
-
-        # 2. RADAR CHART (Dibuat hidup dengan Fill & Line)
+       # 2. RADAR CHART (Dibuat hidup dengan Fill & Line)
         st.markdown("### Pentagon Analysis Radar")
         fig_radar = go.Figure()
         fig_radar.add_trace(go.Scatterpolar(
