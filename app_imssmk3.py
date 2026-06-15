@@ -3,18 +3,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import google.generativeai as genai
-from pypdf import PdfReader
 
+# Konfigurasi Halaman
 st.set_page_config(page_title="SRIS Dashboard", layout="wide")
 st.title("📊 SRIS Dashboard Analysis")
 
-# Inisialisasi Session State untuk teks regulasi
-if 'regulasi_text' not in st.session_state:
-    st.session_state['regulasi_text'] = "Tidak ada regulasi khusus."
-
-uploaded_file = st.file_uploader("Upload file CSV/Excel Data Audit:", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload file CSV/Excel:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
+    # Membaca data
     try:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
@@ -22,7 +19,7 @@ if uploaded_file is not None:
         st.error(f"Gagal membaca file: {e}")
         st.stop()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "🕸️ Pentagon & Risk", "🤖 AI Analyst", "📜 Regulasi PDF"])
+    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
     with tab1:
         st.subheader("Analisis Temuan")
@@ -36,39 +33,73 @@ if uploaded_file is not None:
 
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
-        # (Logika mapping tetap sama seperti sebelumnya)
-        # ... [Potongan kode mapping Pentagon] ...
-        st.write("Radar Chart akan menampilkan rata-rata performa berdasarkan data di atas.")
+        
+        cols_pentagon = [
+            'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
+            'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
+            'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]', 
+            'Skoring Pentagon Analisis [P4- Operasional]', 
+            'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
+        ]
+        
+        def clean_and_map(val):
+            val_str = str(val).strip().lower()
+            if 'rendah' in val_str: return 1
+            if 'cukup' in val_str: return 2
+            if 'sedang' in val_str: return 3
+            if 'sangat baik' in val_str: return 5
+            if 'baik' in val_str: return 4
+            return 0
 
-    with tab4:
-        st.subheader("📜 Upload Peraturan K3/Lingkungan (PDF)")
-        pdf_file = st.file_uploader("Upload PDF Regulasi:", type=["pdf"])
-        if pdf_file:
-            reader = PdfReader(pdf_file)
-            text = "".join([page.extract_text() for page in reader.pages])
-            st.session_state['regulasi_text'] = text
-            st.success(f"Regulasi berhasil dimuat: {pdf_file.name}")
-            with st.expander("Lihat ringkasan dokumen"):
-                st.write(text[:1000] + "...")
+        for col in cols_pentagon:
+            if col in df.columns:
+                df[col] = df[col].apply(clean_and_map)
+        
+        avg_scores = df[cols_pentagon].mean().values
+        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+        
+        # Radar Chart
+        fig_radar = go.Figure()
+        fig_radar.add_trace(go.Scatterpolar(
+            r=avg_scores, theta=categories, fill='toself',
+            fillcolor='rgba(99, 110, 250, 0.4)',
+            line=dict(color='#636EFA', width=3),
+            marker=dict(size=8)
+        ))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Skor Pentagon")
+        st.plotly_chart(fig_radar, use_container_width=True)
+        
+        # Risk & Maturity
+        fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
+        st.plotly_chart(fig3, use_container_width=True)
+        
+        # Bubble Chart
+        fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+                          color='Departemen Divisi/Area', size='Implementation Risk Maturity', template="plotly_white")
+        st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
-        st.subheader("🤖 AI Root Cause Analysis (Berbasis Regulasi)")
+        st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
         
-        if user_api_key and "Detail Temuan Ketidaksesuaian" in df.columns:
-            model = genai.GenerativeModel('gemini-pro')
-            selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].unique())
-            
-            if st.button("Generate Analisis Berbasis Regulasi"):
-                reg_context = st.session_state['regulasi_text']
-                prompt = f"""
-                Analisis temuan audit berikut: {selected}.
-                Gunakan konteks peraturan/regulasi K3/Lingkungan berikut sebagai acuan hukum:
-                {reg_context[:4000]}
+        if user_api_key:
+            try:
+                genai.configure(api_key=user_api_key)
+                # Kode Detektif: Mencari model yang tersedia
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                st.write("Model yang tersedia di akun Anda:", models)
                 
-                Berikan rekomendasi perbaikan yang patuh pada regulasi tersebut.
-                """
-                with st.spinner('AI sedang mencocokkan temuan dengan regulasi...'):
-                    response = model.generate_content(prompt)
-                    st.markdown("### Hasil Analisis AI:")
-                    st.write(response.text)
+                # Pilih model pertama yang tersedia dari daftar
+                if models:
+                    model_name = st.selectbox("Pilih Model yang tersedia:", models)
+                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                    
+                    if st.button("Generate Analisis AI"):
+                        model = genai.GenerativeModel(model_name)
+                        response = model.generate_content(f"Analisis akar masalah: {selected}")
+                        st.markdown(response.text)
+                else:
+                    st.error("Tidak ada model yang ditemukan untuk API Key ini.")
+            except Exception as e:
+                st.error(f"Error: {e}")
+                        
