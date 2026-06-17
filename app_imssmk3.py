@@ -1,62 +1,43 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import google.generativeai as genai
 
-# Konfigurasi Halaman
-st.set_page_config(page_title="SRIS Dashboard", layout="wide")
-st.title("📊 SRIS Dashboard Analysis")
+st.set_page_config(page_title="SRIS AI Auditor", layout="wide")
 
-# Upload File
-uploaded_file = st.file_uploader("Upload file CSV/Excel Data Audit:", type=["csv", "xlsx"])
+# Sidebar untuk API Key (Simpan di sini agar tidak di kode)
+api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
 
-if uploaded_file is not None:
-    try:
-        # Membaca file dengan aman
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-        df.columns = df.columns.str.strip()
-    except Exception as e:
-        st.error(f"Gagal membaca file: {e}")
-        st.stop()
+st.title("🛡️ SRIS: Smart Risk & Audit System")
 
-    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
+# Load Data
+try:
+    df = pd.read_excel("contoh soal.xlsx")
+    df.columns = df.columns.str.strip()
+except:
+    st.error("File 'contoh soal.xlsx' tidak ditemukan! Pastikan file diunggah di folder yang sama.")
+    st.stop()
 
-    # Tab 1: Ringkasan
-    with tab1:
-        st.subheader("Analisis Temuan")
-        if 'Departemen Divisi/Area' in df.columns:
-            df_temuan = df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah')
-            fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color='Jumlah', color_continuous_scale='Reds')
-            st.plotly_chart(fig_bar, use_container_width=True)
-        
-        if "Detail Temuan Ketidaksesuaian" in df.columns:
-            st.dataframe(df[['Departemen Divisi/Area', 'Detail Temuan Ketidaksesuaian']], use_container_width=True)
+# Tampilan Visual (Sunburst & Matrix)
+col1, col2 = st.columns(2)
 
-    # Tab 2: Pentagon
-    with tab2:
-        st.subheader("🕸️ Pentagon & Risk Analysis")
-        # Logika pembersihan skor
-        def clean_score(val):
-            try: return int(float(str(val).split()[0])) # Mengambil angka pertama
-            except: return 0
+with col1:
+    st.subheader("Distribusi Risiko")
+    fig_sun = px.sunburst(df, path=['Risk Treatment (Strategis)', 'Pengendalian Resiko (Taktis)'], 
+                          values='Estimasi Kerugian Finansial Atas Temuan Audit')
+    st.plotly_chart(fig_sun, use_container_width=True)
 
-        # ... (Gunakan logika pembersihan yang sudah Anda buat sebelumnya)
-        st.info("Pastikan data Pentagon sudah terisi angka 1-5 agar radar chart muncul.")
-
-    # Tab 3: AI Analyst
-    with tab3:
-        api_key = st.text_input("Google API Key:", type="password")
-        if api_key:
-            try:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                
-                temuan_list = df["Detail Temuan Ketidaksesuaian"].dropna().unique() if "Detail Temuan Ketidaksesuaian" in df.columns else []
-                selected = st.selectbox("Pilih Temuan:", temuan_list)
-                
-                if st.button("Generate Analisis AI"):
-                    response = model.generate_content(f"Analisis temuan audit: {selected}")
-                    st.markdown(response.text)
-            except Exception as e:
-                st.error(f"Error pada AI: {e}")
+with col2:
+    st.subheader("Analisis AI")
+    selected_issue = st.selectbox("Pilih Temuan untuk dianalisis AI:", df['Detail Temuan Ketidaksesuaian'].unique())
+    
+    if st.button("Analisis dengan AI"):
+        if not api_key:
+            st.warning("Masukkan API Key terlebih dahulu!")
+        else:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            prompt = f"Sebagai auditor profesional, analisis temuan berikut: {selected_issue}. Berikan akar masalah dan rekomendasi perbaikan."
+            response = model.generate_content(prompt)
+            st.success("Hasil Analisis AI:")
+            st.write(response.text)
