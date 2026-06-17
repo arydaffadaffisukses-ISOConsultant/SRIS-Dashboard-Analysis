@@ -1,6 +1,5 @@
 streamlit
 pandas
-plotly
 openpyxl
+plotly
 google-generativeai
-pypdf
