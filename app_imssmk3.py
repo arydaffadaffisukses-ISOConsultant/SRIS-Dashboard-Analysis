@@ -1,43 +1,42 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import google.generativeai as genai
+import plotly.graph_objects as go
 
-st.set_page_config(page_title="SRIS AI Auditor", layout="wide")
+st.set_page_config(page_title="Audit Dashboard TDM", layout="wide")
+st.title("📊 SRIS Dashboard: PT TDM Analysis")
 
-# Sidebar untuk API Key (Simpan di sini agar tidak di kode)
-api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
+# Upload File
+uploaded_file = st.file_uploader("Upload File Audit Anda:", type=["csv", "xlsx"])
 
-st.title("🛡️ SRIS: Smart Risk & Audit System")
-
-# Load Data
-try:
-    df = pd.read_excel("contoh soal.xlsx")
-    df.columns = df.columns.str.strip()
-except:
-    st.error("File 'contoh soal.xlsx' tidak ditemukan! Pastikan file diunggah di folder yang sama.")
-    st.stop()
-
-# Tampilan Visual (Sunburst & Matrix)
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("Distribusi Risiko")
-    fig_sun = px.sunburst(df, path=['Risk Treatment (Strategis)', 'Pengendalian Resiko (Taktis)'], 
-                          values='Estimasi Kerugian Finansial Atas Temuan Audit')
-    st.plotly_chart(fig_sun, use_container_width=True)
-
-with col2:
-    st.subheader("Analisis AI")
-    selected_issue = st.selectbox("Pilih Temuan untuk dianalisis AI:", df['Detail Temuan Ketidaksesuaian'].unique())
-    
-    if st.button("Analisis dengan AI"):
-        if not api_key:
-            st.warning("Masukkan API Key terlebih dahulu!")
-        else:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            prompt = f"Sebagai auditor profesional, analisis temuan berikut: {selected_issue}. Berikan akar masalah dan rekomendasi perbaikan."
-            response = model.generate_content(prompt)
-            st.success("Hasil Analisis AI:")
-            st.write(response.text)
+if uploaded_file is not None:
+    try:
+        # Load data
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+        
+        # PENTING: Membersihkan nama kolom dari spasi yang tidak terlihat
+        df.columns = df.columns.str.strip()
+        
+        # Tab utama
+        tab1, tab2 = st.tabs(["📊 Dashboard Visual", "📋 Detail Data"])
+        
+        with tab1:
+            st.subheader("Distribusi Temuan per Departemen")
+            if 'Departemen Divisi/Area' in df.columns:
+                fig = px.bar(df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah'), 
+                             x='Departemen Divisi/Area', y='Jumlah', color='Jumlah')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Sunburst Check
+            strategi_col = [c for c in df.columns if 'Strategis' in c]
+            taktis_col = [c for c in df.columns if 'Taktis' in c]
+            
+            if strategi_col and taktis_col:
+                st.subheader("Korelasi Strategi vs Taktis")
+                fig_sun = px.sunburst(df, path=[strategi_col[0], taktis_col[0]], 
+                                      values=None) # Tambahkan angka jika ada kolom kerugian
+                st.plotly_chart(fig_sun, use_container_width=True)
+                
+    except Exception as e:
+        st.error(f"Terjadi kesalahan pada data: {e}")
+        st.info("Pastikan nama kolom di Excel Bapak sesuai dengan yang terbaca oleh sistem.")
