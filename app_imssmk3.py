@@ -14,7 +14,7 @@ if uploaded_file is not None:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
         
-        # Fungsi pembersihan angka
+        # Fungsi pembersihan angka untuk estimasi kerugian
         def get_num(text):
             text = str(text)
             nums = re.findall(r'\d+', text.replace('.', '').replace(',', ''))
@@ -40,27 +40,26 @@ if uploaded_file is not None:
             )
             st.plotly_chart(fig_scat, use_container_width=True)
 
-        with # Tab 3: AI Analyst
         with tab3:
-        st.subheader("🤖 AI Root Cause Analysis")
-        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
-        
-        if user_api_key:
-            try:
-                genai.configure(api_key=user_api_key)
-                models_info = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                model_names = [m.name for m in models_info]
-                
-                if model_names:
-                    model_name = st.selectbox("Pilih Model AI:", model_names, index=0)
+            st.subheader("🤖 AI Root Cause Analysis")
+            user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+            if user_api_key:
+                try:
+                    import google.generativeai as genai
+                    genai.configure(api_key=user_api_key)
                     if "Detail Temuan Ketidaksesuaian" in df.columns:
-                        selected = st.selectbox("Pilih Temuan untuk Dianalisis:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                        options = df["Detail Temuan Ketidaksesuaian"].dropna().unique()
+                        selected = st.selectbox("Pilih Temuan untuk dianalisis:", options)
                         if st.button("Generate Analisis AI"):
                             with st.spinner("AI sedang menganalisis..."):
-                                model = genai.GenerativeModel(model_name)
-                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan: {selected}")
+                                model = genai.GenerativeModel('gemini-1.5-flash')
+                                response = model.generate_content(f"Analisis akar masalah untuk temuan: {selected}")
                                 st.markdown("### Hasil Analisis AI:")
-                                st.markdown(response.text)
+                                st.write(response.text)
+                except Exception as e:
+                    st.error(f"Error AI: {e}")
 
+    except Exception as e:
+        st.error(f"Terjadi kesalahan saat memproses file: {e}")
 else:
     st.info("Silakan upload file untuk memulai.")
