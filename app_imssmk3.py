@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -33,7 +34,7 @@ if uploaded_file is not None:
         with tab1:
             st.subheader("Jumlah Temuan per Departemen")
             import streamlit as st
-import pandas as pd
+
 
 # 1. Judul Aplikasi
 st.title("Dashboard Analisis Audit")
