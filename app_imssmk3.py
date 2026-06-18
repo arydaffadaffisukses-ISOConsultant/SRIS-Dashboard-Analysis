@@ -51,18 +51,24 @@ if uploaded_file is not None:
         with tab3:
             st.subheader("🤖 AI Root Cause Analysis")
             user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+            
             if user_api_key:
                 try:
                     import google.generativeai as genai
                     genai.configure(api_key=user_api_key)
-                    model = genai.GenerativeModel('gemini-1.5-flash')
                     
-                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].unique())
-                    if st.button("Generate Analisis"):
-                        res = model.generate_content(f"Analisis akar masalah: {selected}")
-                        st.write(res.text)
+                    # Kita gunakan 'gemini-pro' karena paling stabil dan didukung luas
+                    model = genai.GenerativeModel('gemini-pro')
+                    
+                    if "Detail Temuan Ketidaksesuaian" in df.columns:
+                        options = df["Detail Temuan Ketidaksesuaian"].dropna().unique()
+                        selected = st.selectbox("Pilih Temuan untuk dianalisis:", options)
+                        
+                        if st.button("Generate Analisis AI"):
+                            with st.spinner("AI sedang menganalisis..."):
+                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan audit: {selected}")
+                                st.markdown("### Hasil Analisis AI:")
+                                st.write(response.text)
                 except Exception as e:
                     st.error(f"Error AI: {e}")
-
-    except Exception as e:
-        st.error(f"Eror saat memproses data: {e}")
+                    st.write("Tips: Pastikan API Key Anda sudah diaktifkan di Google AI Studio dan memiliki kuota.")
