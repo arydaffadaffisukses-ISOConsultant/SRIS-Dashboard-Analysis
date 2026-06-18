@@ -76,7 +76,8 @@ if uploaded_file is not None:
         df['Kerugian_Clean'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
         
         # Gunakan kategori sebagai sumbu X agar tidak berantakan
-        fig_bubble = px.scatter(df, 
+        # Cukup buat dataframe yang rapi, lalu panggil ini:
+        st.bar_chart(df.groupby('Departemen Divisi/Area')['Kerugian_Clean'].sum()) 
                                 x='Departemen Divisi/Area', 
                                 y='Kerugian_Clean',
                                 size='Kerugian_Clean', 
