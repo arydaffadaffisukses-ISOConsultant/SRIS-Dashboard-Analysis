@@ -72,19 +72,36 @@ if uploaded_file is not None:
         with tab4:
             st.subheader("📊 Pentagon Analysis: Risk Factors")
             
-            # Menghitung rata-rata Maturity per Dimensi
-            pentagon_summary = df.groupby('Dimensi_Audit')['Maturity_Val'].mean().reindex([
-                'P1- Regulasi & Kepatuhan', 'P2- Finansial', 'P3- Integritas data', 
-                'P4- Operasional', 'P5- Reputasi'
-            ], fill_value=0).reset_index()
+            # Daftar kolom yang tepat sesuai header CSV Anda
+            cols_pentagon = [
+                'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
+                'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]',
+                'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]',
+                'Skoring Pentagon Analisis [P4- Operasional]',
+                'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
+            ]
             
-            fig_radar = px.line_polar(pentagon_summary, r='Maturity_Val', theta='Dimensi_Audit', line_close=True)
-            fig_radar.update_traces(fill='toself')
-            fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])))
-            st.plotly_chart(fig_radar, use_container_width=True)
-            st.info("Grafik di atas dihitung berdasarkan rata-rata Maturity Score per kategori temuan audit.")
+            # Fungsi untuk membersihkan angka (mengambil angka pertama yang muncul)
+            def extract_score(text):
+                nums = re.findall(r'\d+', str(text))
+                return float(nums[0]) if nums else 0
 
-    except Exception as e:
-        st.error(f"Terjadi kesalahan pada data: {e}")
-else:
-    st.info("Silakan upload file untuk memulai.")
+            # Hitung rata-rata tiap kolom
+            radar_means = []
+            for col in cols_pentagon:
+                # Membersihkan data terlebih dahulu lalu hitung rata-rata
+                score = df[col].apply(extract_score).mean()
+                radar_means.append(score)
+            
+            # Label untuk radar chart
+            labels = ['P1- Regulasi', 'P2- Finansial', 'P3- Integritas', 'P4- Operasional', 'P5- Reputasi']
+            
+            pentagon_data = pd.DataFrame(dict(r=radar_means, theta=labels))
+            
+            # Plot
+            fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
+            fig_radar.update_traces(fill='toself')
+            fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5]))) # Asumsi skala 1-5
+            st.plotly_chart(fig_radar, use_container_width=True)
+            
+            st.info("Perhitungan ini mengambil rata-rata langsung dari kolom 'Skoring Pentagon' yang ada di file Anda.")
