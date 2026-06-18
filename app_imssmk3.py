@@ -72,7 +72,7 @@ if uploaded_file is not None:
                     st.error(f"Error AI: {e}")
 
         with tab4:
-            st.subheader("📊 Pentagon Analysis: Risk Factors")
+            st.subheader("📊 Pentagon Analysis: Risk Profile")
             
             cols_pentagon = [
                 'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]',
@@ -82,20 +82,23 @@ if uploaded_file is not None:
                 'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
             ]
             
-            # Hitung rata-rata dengan penanganan data kosong
+            # Hitung Rata-rata dan Maksimum
             radar_means = [df[col].apply(extract_score).mean() for col in cols_pentagon]
+            radar_max = [df[col].apply(extract_score).max() for col in cols_pentagon]
             
             labels = ['P1- Regulasi', 'P2- Finansial', 'P3- Integritas', 'P4- Operasional', 'P5- Reputasi']
-            pentagon_data = pd.DataFrame({'r': radar_means, 'theta': labels})
             
-            # Plot Radar
-            fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
+            # Buat DataFrame untuk dua garis
+            data_plot = pd.DataFrame({
+                'r': radar_means + radar_max,
+                'theta': labels + labels,
+                'Tipe': ['Rata-rata (General Health)'] * 5 + ['Skor Tertinggi (Critical Risk)'] * 5
+            })
+            
+            # Plot
+            fig_radar = px.line_polar(data_plot, r='r', theta='theta', color='Tipe', line_close=True, markers=True)
             fig_radar.update_traces(fill='toself')
             fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])))
             st.plotly_chart(fig_radar, use_container_width=True)
-            st.info("Visualisasi radar chart di atas berdasarkan rata-rata skoring yang diinput pada form audit.")
-
-    except Exception as e:
-        st.error(f"Terjadi kesalahan saat memproses file: {e}")
-else:
-    st.info("Silakan upload file untuk memulai.")
+            
+            st.warning("Garis Merah menunjukkan skor tertinggi (risiko ekstrem) yang ditemukan. Jika garis merah jauh melampaui garis biru, berarti ada temuan kritis yang tersembunyi.")
