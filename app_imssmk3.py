@@ -9,66 +9,62 @@ st.title("🛡️ SRIS Dashboard Analytics")
 uploaded_file = st.file_uploader("Upload File CSV/Excel", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
+    # 1. BACA DATA
     try:
-        # Baca data
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
+    except Exception as e:
+        st.error(f"Gagal membaca file: {e}")
+        st.stop()
 
-        # FUNGSI PEMBERSIH DATA (ANGKA MURNI)
-        def get_only_number(val):
-            val_str = str(val)
-            # Ambil angka pertama yang muncul dalam string (misal "2" dari "2, Minor")
-            nums = re.findall(r'\d+', val_str)
-            return float(nums[0]) if nums else 0
+    # 2. PEMBERSIHAN DATA
+    def get_num(text):
+        text = str(text)
+        nums = re.findall(r'\d+', text.replace('.', '').replace(',', ''))
+        return float(nums[0]) if nums else 0
 
-        # Bersihkan kedua kolom yang jadi masalah
-        df['Maturity_Clean'] = df['Implementation Risk Maturity'].apply(get_only_number)
-        df['Kerugian_Clean'] = df['Estimasi Kerugian Finansial Atas Temuan Audit'].apply(get_only_number)
+    # Pastikan nama kolom sesuai dengan file Anda
+    df['Kerugian_Val'] = df['Estimasi Kerugian Finansial Atas Temuan Audit'].apply(get_num)
+    df['Maturity_Val'] = df['Implementation Risk Maturity'].apply(get_num)
 
-        tab1, tab2, tab3 = st.tabs(["Dashboard", "Analisis Finansial", "AI Analyst"])
+    # 3. TAB DASHBOARD
+    tab1, tab2, tab3 = st.tabs(["Dashboard Ringkasan", "Analisis Finansial", "AI Analyst"])
 
-        with tab1:
-            st.subheader("Jumlah Temuan per Departemen")
-            dept_counts = df['Departemen Divisi/Area'].value_counts().reset_index()
-            fig = px.bar(dept_counts, x='Departemen Divisi/Area', y='count')
-            st.plotly_chart(fig, use_container_width=True)
+    with tab1:
+        st.subheader("Jumlah Temuan per Departemen")
+        dept_counts = df['Departemen Divisi/Area'].value_counts().reset_index()
+        dept_counts.columns = ['Departemen', 'Jumlah']
+        fig = px.bar(dept_counts, x='Departemen', y='Jumlah', color='Jumlah')
+        st.plotly_chart(fig, use_container_width=True)
 
-        with tab2:
-            st.subheader("Korelasi Risiko vs Kerugian")
-            # Gunakan kolom yang sudah bersih (Maturity_Clean dan Kerugian_Clean)
-            fig_bubble = px.scatter(
-                df, 
-                x='Maturity_Clean', 
-                y='Kerugian_Clean',
-                size='Maturity_Clean', 
-                color='Departemen Divisi/Area',
-                hover_name='Detail Temuan Ketidaksesuaian',
-                size_max=40,
-                template="plotly_white"
-            )
-            st.plotly_chart(fig_bubble, use_container_width=True)
+    with tab2:
+        st.subheader("Analisis Korelasi Finansial")
+        fig_scat = px.scatter(
+            df, x='Maturity_Val', y='Kerugian_Val', size='Kerugian_Val',
+            color='Departemen Divisi/Area', hover_name='Detail Temuan Ketidaksesuaian'
+        )
+        st.plotly_chart(fig_scat, use_container_width=True)
 
-        with tab3:
-            st.subheader("🤖 AI Root Cause Analysis")
-            user_api_key = st.text_input("Masukkan Google API Key:", type="password")
-            
-            if user_api_key:
-                try:
-                    import google.generativeai as genai
-                    genai.configure(api_key=user_api_key)
+    with tab3:
+        st.subheader("🤖 AI Root Cause Analysis")
+        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        
+        if user_api_key:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=user_api_key)
+                model = genai.GenerativeModel('gemini-pro')
+                
+                if "Detail Temuan Ketidaksesuaian" in df.columns:
+                    options = df["Detail Temuan Ketidaksesuaian"].dropna().unique()
+                    selected = st.selectbox("Pilih Temuan:", options)
                     
-                    # Kita gunakan 'gemini-pro' karena paling stabil dan didukung luas
-                    model = genai.GenerativeModel('gemini-pro')
-                    
-                    if "Detail Temuan Ketidaksesuaian" in df.columns:
-                        options = df["Detail Temuan Ketidaksesuaian"].dropna().unique()
-                        selected = st.selectbox("Pilih Temuan untuk dianalisis:", options)
-                        
-                        if st.button("Generate Analisis AI"):
-                            with st.spinner("AI sedang menganalisis..."):
-                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan audit: {selected}")
-                                st.markdown("### Hasil Analisis AI:")
-                                st.write(response.text)
-                except Exception as e:
-                    st.error(f"Error AI: {e}")
-                    st.write("Tips: Pastikan API Key Anda sudah diaktifkan di Google AI Studio dan memiliki kuota.")
+                    if st.button("Generate Analisis AI"):
+                        with st.spinner("AI sedang bekerja..."):
+                            response = model.generate_content(f"Analisis akar masalah untuk: {selected}")
+                            st.write(response.text)
+            except Exception as e:
+                st.error(f"Error AI: {e}")
