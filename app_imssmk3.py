@@ -82,12 +82,12 @@ df['Estimasi Kerugian Finansial Atas Temuan Audit'] = pd.to_numeric(df['Estimasi
 
 # 2. Sekarang baru buat grafik (gunakan angka konstan untuk size agar tidak error)
 # 1. Pastikan kolom diubah menjadi angka terlebih dahulu (jika gagal, jadi 0)
-df['Implementation Risk Maturity'] = pd.to_numeric(df['Implementation Risk Maturity'], errors='coerce').fillna(0)
+df['Implementation Risk Maturity'] = pd.to_numeric(df['Detail Temuan Ketidaksesuaian'], errors='coerce').fillna(0)
 df['Estimasi Kerugian Finansial Atas Temuan Audit'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
 
 # 2. Sekarang baru buat grafik (gunakan angka konstan untuk size agar tidak error)
 fig_bubble = px.scatter(df, 
-                        x='Implementation Risk Maturity', 
+                        x='Detail Temuan Ketidaksesuaian', 
                         y='Estimasi Kerugian Finansial Atas Temuan Audit',
                         size_max=40, 
                         color='Departemen Divisi/Area',
