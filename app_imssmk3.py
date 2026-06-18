@@ -79,33 +79,28 @@ if uploaded_file is not None:
                     st.error(f"Error AI: {e}")
 
         with tab4:
-    st.subheader("📊 Pentagon Analysis: Risk Factors")
-    
-    # 1. Pastikan kita punya cara untuk mengelompokkan data ke P1-P5
-    # Karena data Anda mungkin belum memiliki kolom P1-P5, 
-    # kita bisa menggunakan rata-rata berdasarkan kolom 'Maturity_Val'
-    # sebagai contoh untuk setiap dimensi (Anda bisa menyesuaikan logikanya):
-    
-    # Contoh kalkulasi sederhana berdasarkan data yang ada:
-    # Anda bisa mengganti angka-angka ini dengan logika per-departemen atau per-klausul
-    val_p1 = df[df['Implementation Risk Maturity'] == 'Low']['Kerugian_Val'].mean() if 'Low' in df['Implementation Risk Maturity'].values else 3
-    val_p2 = df['Kerugian_Val'].mean() / 1000000 # Contoh normalisasi data finansial
-    val_p3 = 4 # Dummy value, silakan ganti dengan kolom relevan
-    val_p4 = 3.5 
-    val_p5 = 4
-    
-    pentagon_data = pd.DataFrame(dict(
-        r=[val_p1, val_p2, val_p3, val_p4, val_p5], 
-        theta=['P1- Regulasi & Kepatuhan', 
-               'P2- Finansial', 
-               'P3- Integritas data', 
-               'P4- Operasional', 
-               'P5- Reputasi']
-    ))
-    
-    fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
-    fig_radar.update_traces(fill='toself')
-    st.plotly_chart(fig_radar, use_container_width=True)
+            st.subheader("📊 Pentagon Analysis: Risk Factors")
+            
+            # Kalkulasi nilai Pentagon (Pastikan angka ini disesuaikan dengan data Anda)
+            val_p1 = 4 # Nilai contoh
+            val_p2 = df['Kerugian_Val'].mean() / 1000000 if not df.empty else 2
+            val_p3 = 4
+            val_p4 = 3.5
+            val_p5 = 4
+            
+            pentagon_data = pd.DataFrame(dict(
+                r=[val_p1, val_p2, val_p3, val_p4, val_p5], 
+                theta=['P1- Regulasi & Kepatuhan', 
+                       'P2- Finansial', 
+                       'P3- Integritas data', 
+                       'P4- Operasional', 
+                       'P5- Reputasi']
+            ))
+            
+            fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
+            fig_radar.update_traces(fill='toself')
+            st.plotly_chart(fig_radar, use_container_width=True)
+
     except Exception as e:
         st.error(f"Terjadi kesalahan pada data: {e}")
 else:
