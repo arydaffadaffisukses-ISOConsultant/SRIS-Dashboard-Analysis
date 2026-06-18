@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -33,48 +32,18 @@ if uploaded_file is not None:
 
         with tab1:
             st.subheader("Jumlah Temuan per Departemen")
-            import streamlit as st
-
-
-# 1. Judul Aplikasi
-st.title("Dashboard Analisis Audit")
-
-# 2. Proses Analisis AI (Bagian yang sudah Anda buat)
-if st.button("Mulai Analisis"):
-    with st.spinner("AI sedang bekerja..."):
-        # ... kode pemanggilan API Gemini Anda ...
-        # ... hasil analisis disimpan ke dalam variabel, misal: 'hasil_analisis' ...
-        
-        # Contoh: Jika hasil dari AI berupa daftar (list), ubah jadi DataFrame
-        df = pd.DataFrame(hasil_analisis) 
-        
-        # Simpan ke session state agar tidak hilang saat refresh
-        st.session_state['df_temuan'] = df
-
-# 3. Menampilkan Hasil (DI SINI TEMPATNYA)
-# Kita cek apakah data sudah ada di session state
-if 'df_temuan' in st.session_state:
-    st.subheader("📋 Daftar Lengkap Temuan Ketidaksesuaian")
-    
-    # Masukkan kode tabel di sini
-    st.dataframe(
-        st.session_state['df_temuan'],
-        hide_index=True,
-        use_container_width=True
-    )
-    
-    # Tombol Download
-    csv = st.session_state['df_temuan'].to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Download Daftar Temuan (CSV)",
-        data=csv,
-        file_name='daftar_temuan.csv',
-        mime='text/csv',
-    )
             dept_counts = df['Departemen Divisi/Area'].value_counts().reset_index()
             dept_counts.columns = ['Departemen', 'Jumlah']
             fig = px.bar(dept_counts, x='Departemen', y='Jumlah', color='Jumlah')
             st.plotly_chart(fig, use_container_width=True)
+            
+            # Menampilkan Tabel Lengkap di Dashboard Tab 1
+            st.subheader("📋 Daftar Lengkap Temuan Ketidaksesuaian")
+            st.dataframe(df, hide_index=True, use_container_width=True)
+            
+            # Tombol Download
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button("📥 Download Daftar Temuan (CSV)", data=csv, file_name='daftar_temuan.csv', mime='text/csv')
 
         with tab2:
             st.subheader("Analisis Korelasi Finansial")
@@ -92,7 +61,6 @@ if 'df_temuan' in st.session_state:
             if api_key:
                 try:
                     genai.configure(api_key=api_key)
-                    # Deteksi model yang tersedia agar tidak 404
                     models = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_names = [m.name for m in models]
                     
@@ -108,7 +76,7 @@ if 'df_temuan' in st.session_state:
                                 st.markdown("### Hasil Analisis AI:")
                                 st.write(response.text)
                     else:
-                        st.warning("Tidak ditemukan model yang tersedia. Cek API Key Anda.")
+                        st.warning("Tidak ditemukan model yang tersedia.")
                 except Exception as e:
                     st.error(f"Error AI: {e}")
 
