@@ -95,7 +95,7 @@ fig_bubble = px.scatter(df,
                         template="plotly_white")
 
     # Tab 3: AI Analyst
-    with tab3:
+with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
         
