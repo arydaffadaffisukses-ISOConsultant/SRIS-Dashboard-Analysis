@@ -28,7 +28,7 @@ if uploaded_file is not None:
         df['Maturity_Val'] = df['Implementation Risk Maturity'].apply(get_num)
 
         # 2. Layout Tabs
-        tab1, tab2, tab3 = st.tabs(["Dashboard", "Analisis Finansial", "AI Analyst"])
+        tab1, tab2, tab3, tab4 = st.tabs(["Dashboard", "Analisis Finansial", "AI Analyst", "Pentagon Analysis"])
 
         with tab1:
             st.subheader("Jumlah Temuan per Departemen")
@@ -82,5 +82,22 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"Terjadi kesalahan pada data: {e}")
+        with tab4:
+    st.subheader("📊 Pentagon Analysis: Risk Factors")
+    
+    # Contoh: Misalkan Anda memiliki 5 dimensi risiko
+    # Anda perlu data yang sudah di-agregasi per departemen atau total
+    # Di sini saya buat contoh dataframe sederhana untuk Radar Chart
+    
+    pentagon_data = pd.DataFrame(dict(
+        r=[4, 3, 5, 2, 4], # Nilai (Ganti dengan perhitungan rata-rata Anda)
+        theta=['Governance', 'Risk', 'Control', 'Compliance', 'Performance'] # 5 Dimensi
+    ))
+    
+    fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
+    fig_radar.update_traces(fill='toself')
+    st.plotly_chart(fig_radar, use_container_width=True)
+    
+    st.info("Pentagon Analysis ini memetakan 5 dimensi utama: Tata Kelola, Risiko, Pengendalian, Kepatuhan, dan Kinerja.")
 else:
     st.info("Silakan upload file untuk memulai.")
