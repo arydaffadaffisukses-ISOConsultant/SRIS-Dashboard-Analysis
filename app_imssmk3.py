@@ -24,36 +24,53 @@ if uploaded_file is not None:
 
         df['Kerugian_Val'] = df['Estimasi Kerugian Finansial Atas Temuan Audit'].apply(get_num)
         
-        # 3. Tab Dashboard
-        tab1, tab2 = st.tabs(["Dashboard Ringkasan", "Analisis Finansial"])
+       # --- Tab 2: Pentagon & Risk ---
+    with tab2:
+        st.subheader("🕸️ Pentagon & Risk Analysis")
+        cols_pentagon = [
+            'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
+            'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
+            'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]', 
+            'Skoring Pentagon Analisis [P4- Operasional]', 
+            'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
+        ]
+        
+        def clean_and_map(val):
+            val_str = str(val).strip().lower()
+            if any(x in val_str for x in ['rendah', 'low', '1']): return 1
+            if any(x in val_str for x in ['cukup', 'medium', '2']): return 2
+            if any(x in val_str for x in ['sedang', '3']): return 3
+            if any(x in val_str for x in ['baik', 'high', '4']): return 4
+            if any(x in val_str for x in ['sangat baik', 'excellent', '5']): return 5
+            return 0
 
-        with tab1:
-            st.subheader("Jumlah Temuan per Departemen")
-            dept_counts = df['Departemen Divisi/Area'].value_counts().reset_index()
-            dept_counts.columns = ['Departemen', 'Jumlah']
-            fig = px.bar(dept_counts, x='Departemen', y='Jumlah', color='Jumlah')
-            st.plotly_chart(fig, use_container_width=True)
+        for col in cols_pentagon:
+            if col in df.columns: df[col] = df[col].apply(clean_and_map)
+        
+        avg_scores = df[cols_pentagon].mean().values
+        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+        
+        fig_radar = go.Figure(go.Scatterpolar(r=avg_scores, theta=categories, fill='toself'))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])), title="Rata-rata Skor Pentagon")
+        st.plotly_chart(fig_radar, use_container_width=True)
 
-        with tab2:
-            st.subheader("Analisis Kerugian Finansial")
-            # Scatter plot menggunakan data yang sudah dibersihkan
-            fig_scat = px.scatter(
-                df, 
-                x='Departemen Divisi/Area', 
-                y='Kerugian_Val', 
-                size='Kerugian_Val',
-                color='Departemen Divisi/Area',
-                hover_name='Detail Temuan Ketidaksesuaian'
-            )
-            st.plotly_chart(fig_scat, use_container_width=True)
+        st.subheader("📈 Korelasi Finansial")
+        # Bersihkan data untuk grafik
+        df['Kerugian_Clean'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
+        
+        # Gunakan kategori sebagai sumbu X agar tidak berantakan
+        fig_bubble = px.scatter(df, 
+                                x='Departemen Divisi/Area', 
+                                y='Kerugian_Clean',
+                                size='Kerugian_Clean', 
+                                color='Departemen Divisi/Area',
+                                hover_name='Detail Temuan Ketidaksesuaian', 
+                                template="plotly_white",
+                                title="Estimasi Kerugian per Departemen")
+        st.plotly_chart(fig_bubble, use_container_width=True)
 
-    except Exception as e:
-        st.error(f"Eror saat memproses data: {e}")
-        st.write("Pastikan nama kolom di file Excel Anda tidak berubah.")
-else:
-    st.info("Silakan upload file untuk memulai.")
-# --- Tab 3: AI Analyst ---
-    with tab3:
+       # --- Tab 3: AI Analyst ---
+       with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
         
@@ -68,5 +85,3 @@ else:
                             response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan: {selected}")
                             st.markdown("### Hasil Analisis AI:")
                             st.write(response.text)
-            except Exception as e:
-                st.error(f"Error AI: {e}")
