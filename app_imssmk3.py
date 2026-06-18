@@ -81,13 +81,24 @@ if uploaded_file is not None:
         with tab4:
             st.subheader("📊 Pentagon Analysis: Risk Factors")
             
-            # Kalkulasi nilai Pentagon (Pastikan angka ini disesuaikan dengan data Anda)
-            val_p1 = 4 # Nilai contoh
-            val_p2 = df['Kerugian_Val'].mean() / 1000000 if not df.empty else 2
-            val_p3 = 4
-            val_p4 = 3.5
-            val_p5 = 4
+            # --- LOGIKA PENGHITUNGAN RIIL ---
+            # Kita hitung rata-rata berdasarkan data yang ada
+            # Jika kolom-kolom ini belum ada di data Anda, sesuaikan dengan nama kolom yang benar
             
+            # 1. Asumsi P1 (Regulasi): Rata-rata maturity
+            val_p1 = df['Maturity_Val'].mean() if 'Maturity_Val' in df.columns else 0
+            
+            # 2. Asumsi P2 (Finansial): Normalisasi kerugian (skala 1-5)
+            # Kita bagi kerugian dengan nilai maksimum untuk dapat skala 0-5
+            max_loss = df['Kerugian_Val'].max() if df['Kerugian_Val'].max() > 0 else 1
+            val_p2 = (df['Kerugian_Val'].mean() / max_loss) * 5
+            
+            # 3. Asumsi P3, P4, P5: Menggunakan rata-rata metrik yang ada
+            val_p3 = df['Maturity_Val'].mean() * 0.8 # Contoh modifikasi
+            val_p4 = df['Maturity_Val'].median()
+            val_p5 = df['Maturity_Val'].std() + 2 # Contoh untuk variasi
+            
+            # Membuat Dataframe
             pentagon_data = pd.DataFrame(dict(
                 r=[val_p1, val_p2, val_p3, val_p4, val_p5], 
                 theta=['P1- Regulasi & Kepatuhan', 
@@ -97,11 +108,10 @@ if uploaded_file is not None:
                        'P5- Reputasi']
             ))
             
+            # Plot
             fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
             fig_radar.update_traces(fill='toself')
+            fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5]))) # Membatasi skala 0-5
             st.plotly_chart(fig_radar, use_container_width=True)
-
-    except Exception as e:
-        st.error(f"Terjadi kesalahan pada data: {e}")
 else:
     st.info("Silakan upload file untuk memulai.")
