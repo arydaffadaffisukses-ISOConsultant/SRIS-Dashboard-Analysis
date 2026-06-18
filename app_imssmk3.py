@@ -2,29 +2,46 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import google.generativeai as genai
 
-st.set_page_config(layout="wide")
-st.title("🛡️ SRIS Dashboard Analytics")
+# Konfigurasi Halaman
+st.set_page_config(page_title="SRIS Dashboard", layout="wide")
+st.title("📊 SRIS Dashboard Analysis")
 
-uploaded_file = st.file_uploader("Upload File CSV/Excel", type=["csv", "xlsx"])
+# Upload File
+uploaded_file = st.file_uploader("Upload file CSV/Excel Data Audit:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
-        # 1. Load data
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
-        
-        # 2. Pembersihan Data Kerugian (Ambil angka dari teks "Sedang ( Rp 10 juta ... )")
-        # Fungsi ini mengambil angka pertama yang ditemukan di dalam string
-        import re
-        def get_num(text):
-            text = str(text)
-            nums = re.findall(r'\d+', text.replace('.', '').replace(',', ''))
-            return float(nums[0]) if nums else 0
+    except Exception as e:
+        st.error(f"Gagal membaca file: {e}")
+        st.stop()
 
-        df['Kerugian_Val'] = df['Estimasi Kerugian Finansial Atas Temuan Audit'].apply(get_num)
+    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
+
+    # --- Tab 1: Dashboard Ringkasan ---
+    with tab1:
+        st.subheader("Analisis Temuan")
+        col1, col2 = st.columns([1, 1])
         
-       # --- Tab 2: Pentagon & Risk ---
+        with col1:
+            st.subheader("Distribusi Temuan per Departemen")
+            df_temuan = df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah')
+            df_temuan = df_temuan.sort_values(by='Jumlah', ascending=False)
+            
+            fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color='Jumlah', color_continuous_scale='Blues')
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        with col2:
+            st.subheader("Detail Temuan Ketidaksesuaian")
+            if "Detail Temuan Ketidaksesuaian" in df.columns:
+                st.dataframe(df[['Departemen Divisi/Area', 'Detail Temuan Ketidaksesuaian']], use_container_width=True, hide_index=True)
+            else:
+                st.warning("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan.")
+
+    # --- Tab 2: Pentagon & Risk ---
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
         cols_pentagon = [
@@ -69,8 +86,8 @@ if uploaded_file is not None:
                                 title="Estimasi Kerugian per Departemen")
         st.plotly_chart(fig_bubble, use_container_width=True)
 
-       # --- Tab 3: AI Analyst ---
-       with tab3:
+    # --- Tab 3: AI Analyst ---
+    with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
         
@@ -85,3 +102,5 @@ if uploaded_file is not None:
                             response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan: {selected}")
                             st.markdown("### Hasil Analisis AI:")
                             st.write(response.text)
+            except Exception as e:
+                st.error(f"Error AI: {e}")
