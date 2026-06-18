@@ -50,6 +50,31 @@ if uploaded_file is not None:
             hover_name='Detail Temuan Ketidaksesuaian'
         )
         st.plotly_chart(fig_scat, use_container_width=True)
+        with tab3:
+        st.subheader("🤖 AI Root Cause Analysis")
+        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        
+        if user_api_key:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=user_api_key)
+                
+                # Dropdown untuk memilih temuan dari file
+                if "Detail Temuan Ketidaksesuaian" in df.columns:
+                    options = df["Detail Temuan Ketidaksesuaian"].dropna().unique()
+                    selected = st.selectbox("Pilih Temuan untuk Dianalisis:", options)
+                    
+                    if st.button("Generate Analisis AI"):
+                        with st.spinner("AI sedang menganalisis akar masalah..."):
+                            model = genai.GenerativeModel('gemini-1.5-flash')
+                            prompt = f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan audit berikut: {selected}"
+                            response = model.generate_content(prompt)
+                            st.markdown("### Hasil Analisis AI:")
+                            st.write(response.text)
+                else:
+                    st.error("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan.")
+            except Exception as e:
+                st.error(f"Error AI: {e}")
 
 else:
     st.info("Silakan upload file untuk memulai.")
