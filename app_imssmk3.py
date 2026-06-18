@@ -79,26 +79,36 @@ if uploaded_file is not None:
         with tab4:
             st.subheader("📊 Pentagon Analysis: Risk Factors")
             
-            # Kalkulasi Dinamis untuk Pentagon
-            # Menggunakan skala 0-5 untuk semua dimensi agar proporsional
+            # --- LOGIKA NORMALISASI DATA (Agar skala P1-P5 seragam 0-5) ---
+            
+            # 1. P1 (Regulasi) & P3 (Integritas) & P4 (Operasional) - Berdasarkan Maturity (Skala 1-5)
             val_p1 = df['Maturity_Val'].mean() if not df.empty else 0
-            val_p2 = min(5, (df['Kerugian_Val'].mean() / df['Kerugian_Val'].max() * 5)) if df['Kerugian_Val'].max() > 0 else 0
             val_p3 = df['Maturity_Val'].median() if not df.empty else 0
-            val_p4 = df['Maturity_Val'].sum() / (len(df) * 2) if len(df) > 0 else 0
-            val_p5 = df['Maturity_Val'].max() if not df.empty else 0
+            val_p4 = df['Maturity_Val'].std() + 1 if not df.empty else 1 # Menambahkan buffer agar tidak 0
+            
+            # 2. P2 (Finansial) - Normalisasi Kerugian ke Skala 0-5
+            # Jika kerugian tinggi, maka risiko tinggi (bisa dibalik rumusnya jika perlu)
+            max_loss = df['Kerugian_Val'].max() if df['Kerugian_Val'].max() > 0 else 1
+            val_p2 = (df['Kerugian_Val'].mean() / max_loss) * 5
+            
+            # 3. P5 (Reputasi) - Normalisasi berdasarkan volume temuan per departemen
+            val_p5 = min(5, (df.shape[0] / 10)) # Contoh: semakin banyak temuan, risiko reputasi naik
+            
+            # Pastikan semua nilai berada di rentang 0-5
+            r_values = [min(5, max(0, val_p1)), min(5, max(0, val_p2)), 
+                        min(5, max(0, val_p3)), min(5, max(0, val_p4)), 
+                        min(5, max(0, val_p5))]
             
             pentagon_data = pd.DataFrame(dict(
-                r=[val_p1, val_p2, val_p3, val_p4, val_p5], 
-                theta=['P1- Regulasi & Kepatuhan', 'P2- Finansial', 'P3- Integritas data', 'P4- Operasional', 'P5- Reputasi']
+                r=r_values, 
+                theta=['P1- Regulasi & Kepatuhan', 'P2- Finansial', 
+                       'P3- Integritas data', 'P4- Operasional', 'P5- Reputasi']
             ))
             
+            # Plot
             fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
             fig_radar.update_traces(fill='toself')
             fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])))
             st.plotly_chart(fig_radar, use_container_width=True)
-            st.info("Catatan: Grafik ini dikalkulasi secara otomatis berdasarkan rata-rata Maturity dan Kerugian dari data Anda.")
-
-    except Exception as e:
-        st.error(f"Terjadi kesalahan pada data: {e}")
 else:
     st.info("Silakan upload file untuk memulai.")
