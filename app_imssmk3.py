@@ -1,52 +1,82 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import re
+import plotly.graph_objects as go
+import google.generativeai as genai
 
-st.set_page_config(layout="wide")
-st.title("🛡️ SRIS Dashboard Analytics")
+# Konfigurasi Halaman
+st.set_page_config(page_title="SRIS Dashboard", layout="wide")
+st.title("📊 SRIS Dashboard Analysis")
 
-uploaded_file = st.file_uploader("Upload File CSV/Excel", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload file CSV/Excel:", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    # 1. BACA DATA
+    # Membaca data
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip()
     except Exception as e:
         st.error(f"Gagal membaca file: {e}")
         st.stop()
 
-    # 2. PEMBERSIHAN DATA
-    def get_num(text):
-        text = str(text)
-        nums = re.findall(r'\d+', text.replace('.', '').replace(',', ''))
-        return float(nums[0]) if nums else 0
-
-    # Pastikan nama kolom sesuai dengan file Anda
-    df['Kerugian_Val'] = df['Estimasi Kerugian Finansial Atas Temuan Audit'].apply(get_num)
-    df['Maturity_Val'] = df['Implementation Risk Maturity'].apply(get_num)
-
-    # 3. TAB DASHBOARD
-    tab1, tab2, tab3 = st.tabs(["Dashboard Ringkasan", "Analisis Finansial", "AI Analyst"])
+    tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
     with tab1:
-        st.subheader("Jumlah Temuan per Departemen")
-        dept_counts = df['Departemen Divisi/Area'].value_counts().reset_index()
-        dept_counts.columns = ['Departemen', 'Jumlah']
-        fig = px.bar(dept_counts, x='Departemen', y='Jumlah', color='Jumlah')
-        st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Analisis Temuan")
+        col1, col2 = st.columns(2)
+        with col1:
+            fig1 = px.pie(df, names='Departemen Divisi/Area', title='Distribusi Temuan')
+            st.plotly_chart(fig1, use_container_width=True)
+        with col2:
+            fig2 = px.histogram(df, x='Departemen Divisi/Area', color='Estimasi Kerugian Finansial Atas Temuan Audit')
+            st.plotly_chart(fig2, use_container_width=True)
 
     with tab2:
-        st.subheader("Analisis Korelasi Finansial")
-        fig_scat = px.scatter(
-            df, x='Maturity_Val', y='Kerugian_Val', size='Kerugian_Val',
-            color='Departemen Divisi/Area', hover_name='Detail Temuan Ketidaksesuaian'
-        )
-        st.plotly_chart(fig_scat, use_container_width=True)
+        st.subheader("🕸️ Pentagon & Risk Analysis")
+        
+        cols_pentagon = [
+            'Skoring Pentagon Analisis [P1- Regulasi & Kepatuhan]', 
+            'Skoring Pentagon Analisis [P2- Finansial (Budget & KerugianFinansial)]', 
+            'Skoring Pentagon Analisis [P3- Integritas data & Keselarasan System]', 
+            'Skoring Pentagon Analisis [P4- Operasional]', 
+            'Skoring Pentagon Analisis [P5 Reputasi & Nama Baik]'
+        ]
+        
+        def clean_and_map(val):
+            val_str = str(val).strip().lower()
+            if 'rendah' in val_str: return 1
+            if 'cukup' in val_str: return 2
+            if 'sedang' in val_str: return 3
+            if 'sangat baik' in val_str: return 5
+            if 'baik' in val_str: return 4
+            return 0
+
+        for col in cols_pentagon:
+            if col in df.columns:
+                df[col] = df[col].apply(clean_and_map)
+        
+        avg_scores = df[cols_pentagon].mean().values
+        categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
+        
+        # Radar Chart
+        fig_radar = go.Figure()
+        fig_radar.add_trace(go.Scatterpolar(
+            r=avg_scores, theta=categories, fill='toself',
+            fillcolor='rgba(99, 110, 250, 0.4)',
+            line=dict(color='#636EFA', width=3),
+            marker=dict(size=8)
+        ))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), title="Rata-rata Skor Pentagon")
+        st.plotly_chart(fig_radar, use_container_width=True)
+        
+        # Risk & Maturity
+        fig3 = px.bar(df, x='Departemen Divisi/Area', y='Implementation Risk Maturity', color='Departemen Divisi/Area')
+        st.plotly_chart(fig3, use_container_width=True)
+        
+        # Bubble Chart
+        fig4 = px.scatter(df, x='Implementation Risk Maturity', y='Estimasi Kerugian Finansial Atas Temuan Audit', 
+                          color='Departemen Divisi/Area', size='Implementation Risk Maturity', template="plotly_white")
+        st.plotly_chart(fig4, use_container_width=True)
 
     with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
@@ -54,17 +84,22 @@ if uploaded_file is not None:
         
         if user_api_key:
             try:
-                import google.generativeai as genai
                 genai.configure(api_key=user_api_key)
-                model = genai.GenerativeModel('gemini-pro')
+                # Kode Detektif: Mencari model yang tersedia
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                st.write("Model yang tersedia di akun Anda:", models)
                 
-                if "Detail Temuan Ketidaksesuaian" in df.columns:
-                    options = df["Detail Temuan Ketidaksesuaian"].dropna().unique()
-                    selected = st.selectbox("Pilih Temuan:", options)
+                # Pilih model pertama yang tersedia dari daftar
+                if models:
+                    model_name = st.selectbox("Pilih Model yang tersedia:", models)
+                    selected = st.selectbox("Pilih Temuan:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
                     
                     if st.button("Generate Analisis AI"):
-                        with st.spinner("AI sedang bekerja..."):
-                            response = model.generate_content(f"Analisis akar masalah untuk: {selected}")
-                            st.write(response.text)
+                        model = genai.GenerativeModel(model_name)
+                        response = model.generate_content(f"Analisis akar masalah: {selected}")
+                        st.markdown(response.text)
+                else:
+                    st.error("Tidak ada model yang ditemukan untuk API Key ini.")
             except Exception as e:
-                st.error(f"Error AI: {e}")
+                st.error(f"Error: {e}")
+                        
