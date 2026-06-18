@@ -21,7 +21,7 @@ if uploaded_file is not None:
 
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard Ringkasan", "🕸️ Pentagon & Risk", "🤖 AI Analyst"])
 
-    # Tab 1: Dashboard Ringkasan
+    # --- Tab 1: Dashboard Ringkasan ---
     with tab1:
         st.subheader("Analisis Temuan")
         col1, col2 = st.columns([1, 1])
@@ -31,21 +31,17 @@ if uploaded_file is not None:
             df_temuan = df.groupby('Departemen Divisi/Area').size().reset_index(name='Jumlah')
             df_temuan = df_temuan.sort_values(by='Jumlah', ascending=False)
             
-            # Warna: Merah untuk tertinggi, biru untuk lainnya
-            colors = ['red' if i == 0 else 'royalblue' for i in range(len(df_temuan))]
-            fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color_discrete_sequence=['royalblue'])
-            fig_bar.update_traces(marker_color=colors)
+            fig_bar = px.bar(df_temuan, x='Departemen Divisi/Area', y='Jumlah', color='Jumlah', color_continuous_scale='Blues')
             st.plotly_chart(fig_bar, use_container_width=True)
 
         with col2:
             st.subheader("Detail Temuan Ketidaksesuaian")
             if "Detail Temuan Ketidaksesuaian" in df.columns:
-                tabel_temuan = df[['Departemen Divisi/Area', 'Detail Temuan Ketidaksesuaian']]
-                st.dataframe(tabel_temuan, use_container_width=True, hide_index=True)
+                st.dataframe(df[['Departemen Divisi/Area', 'Detail Temuan Ketidaksesuaian']], use_container_width=True, hide_index=True)
             else:
                 st.warning("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan.")
 
-    # Tab 2: Pentagon & Risk
+    # --- Tab 2: Pentagon & Risk ---
     with tab2:
         st.subheader("🕸️ Pentagon & Risk Analysis")
         cols_pentagon = [
@@ -75,47 +71,36 @@ if uploaded_file is not None:
         fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])), title="Rata-rata Skor Pentagon")
         st.plotly_chart(fig_radar, use_container_width=True)
 
-        st.subheader("📈 Hubungan Risiko vs Kerugian Finansial")
-        # 1. Pastikan kolom diubah menjadi angka terlebih dahulu (jika gagal, jadi 0)
-df['Implementation Risk Maturity'] = pd.to_numeric(df['Implementation Risk Maturity'], errors='coerce').fillna(0)
-df['Estimasi Kerugian Finansial Atas Temuan Audit'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
+        st.subheader("📈 Korelasi Finansial")
+        # Bersihkan data untuk grafik
+        df['Kerugian_Clean'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
+        
+        # Gunakan kategori sebagai sumbu X agar tidak berantakan
+        fig_bubble = px.scatter(df, 
+                                x='Departemen Divisi/Area', 
+                                y='Kerugian_Clean',
+                                size='Kerugian_Clean', 
+                                color='Departemen Divisi/Area',
+                                hover_name='Detail Temuan Ketidaksesuaian', 
+                                template="plotly_white",
+                                title="Estimasi Kerugian per Departemen")
+        st.plotly_chart(fig_bubble, use_container_width=True)
 
-# 2. Sekarang baru buat grafik (gunakan angka konstan untuk size agar tidak error)
-# 1. Pastikan kolom diubah menjadi angka terlebih dahulu (jika gagal, jadi 0)
-df['Implementation Risk Maturity'] = pd.to_numeric(df['Detail Temuan Ketidaksesuaian'], errors='coerce').fillna(0)
-df['Estimasi Kerugian Finansial Atas Temuan Audit'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
-
-# 2. Sekarang baru buat grafik (gunakan angka konstan untuk size agar tidak error)
-fig_bubble = px.scatter(df, 
-                        x='Detail Temuan Ketidaksesuaian', 
-                        y='Estimasi Kerugian Finansial Atas Temuan Audit',
-                        size_max=40, 
-                        color='Departemen Divisi/Area',
-                        hover_name='Departemen Divisi/Area', 
-                        template="plotly_white")
-
-    # Tab 3: AI Analyst
-with tab3:
+    # --- Tab 3: AI Analyst ---
+    with tab3:
         st.subheader("🤖 AI Root Cause Analysis")
         user_api_key = st.text_input("Masukkan Google API Key:", type="password")
         
         if user_api_key:
             try:
                 genai.configure(api_key=user_api_key)
-                models_info = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                model_names = [m.name for m in models_info]
-                
-                if model_names:
-                    model_name = st.selectbox("Pilih Model AI:", model_names, index=0)
-                    if "Detail Temuan Ketidaksesuaian" in df.columns:
-                        selected = st.selectbox("Pilih Temuan untuk Dianalisis:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
-                        if st.button("Generate Analisis AI"):
-                            with st.spinner("AI sedang menganalisis..."):
-                                model = genai.GenerativeModel(model_name)
-                                response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan: {selected}")
-                                st.markdown("### Hasil Analisis AI:")
-                                st.markdown(response.text)
-                    else:
-                        st.error("Kolom 'Detail Temuan Ketidaksesuaian' tidak ditemukan di file Anda.")
+                if "Detail Temuan Ketidaksesuaian" in df.columns:
+                    selected = st.selectbox("Pilih Temuan untuk Dianalisis:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                    if st.button("Generate Analisis AI"):
+                        with st.spinner("AI sedang bekerja..."):
+                            model = genai.GenerativeModel('gemini-1.5-flash')
+                            response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan: {selected}")
+                            st.markdown("### Hasil Analisis AI:")
+                            st.write(response.text)
             except Exception as e:
                 st.error(f"Error AI: {e}")
