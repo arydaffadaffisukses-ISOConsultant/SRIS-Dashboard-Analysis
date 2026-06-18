@@ -52,3 +52,21 @@ if uploaded_file is not None:
         st.write("Pastikan nama kolom di file Excel Anda tidak berubah.")
 else:
     st.info("Silakan upload file untuk memulai.")
+# --- Tab 3: AI Analyst ---
+    with tab3:
+        st.subheader("🤖 AI Root Cause Analysis")
+        user_api_key = st.text_input("Masukkan Google API Key:", type="password")
+        
+        if user_api_key:
+            try:
+                genai.configure(api_key=user_api_key)
+                if "Detail Temuan Ketidaksesuaian" in df.columns:
+                    selected = st.selectbox("Pilih Temuan untuk Dianalisis:", df["Detail Temuan Ketidaksesuaian"].dropna().unique())
+                    if st.button("Generate Analisis AI"):
+                        with st.spinner("AI sedang bekerja..."):
+                            model = genai.GenerativeModel('gemini-1.5-flash')
+                            response = model.generate_content(f"Analisis akar masalah dan berikan rekomendasi perbaikan profesional untuk temuan: {selected}")
+                            st.markdown("### Hasil Analisis AI:")
+                            st.write(response.text)
+            except Exception as e:
+                st.error(f"Error AI: {e}")
