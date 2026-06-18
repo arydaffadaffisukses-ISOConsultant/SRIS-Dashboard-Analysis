@@ -73,45 +73,32 @@ if uploaded_file is not None:
                                 response = model.generate_content(f"Analisis akar masalah untuk: {selected_temuan}")
                                 st.markdown("### Hasil Analisis AI:")
                                 st.write(response.text)
-                    else:
-                        st.warning("Tidak ditemukan model yang tersedia.")
                 except Exception as e:
                     st.error(f"Error AI: {e}")
 
         with tab4:
             st.subheader("📊 Pentagon Analysis: Risk Factors")
             
-            # --- LOGIKA PENGHITUNGAN RIIL ---
-            # Kita hitung rata-rata berdasarkan data yang ada
-            # Jika kolom-kolom ini belum ada di data Anda, sesuaikan dengan nama kolom yang benar
+            # Kalkulasi Dinamis untuk Pentagon
+            # Menggunakan skala 0-5 untuk semua dimensi agar proporsional
+            val_p1 = df['Maturity_Val'].mean() if not df.empty else 0
+            val_p2 = min(5, (df['Kerugian_Val'].mean() / df['Kerugian_Val'].max() * 5)) if df['Kerugian_Val'].max() > 0 else 0
+            val_p3 = df['Maturity_Val'].median() if not df.empty else 0
+            val_p4 = df['Maturity_Val'].sum() / (len(df) * 2) if len(df) > 0 else 0
+            val_p5 = df['Maturity_Val'].max() if not df.empty else 0
             
-            # 1. Asumsi P1 (Regulasi): Rata-rata maturity
-            val_p1 = df['Maturity_Val'].mean() if 'Maturity_Val' in df.columns else 0
-            
-            # 2. Asumsi P2 (Finansial): Normalisasi kerugian (skala 1-5)
-            # Kita bagi kerugian dengan nilai maksimum untuk dapat skala 0-5
-            max_loss = df['Kerugian_Val'].max() if df['Kerugian_Val'].max() > 0 else 1
-            val_p2 = (df['Kerugian_Val'].mean() / max_loss) * 5
-            
-            # 3. Asumsi P3, P4, P5: Menggunakan rata-rata metrik yang ada
-            val_p3 = df['Maturity_Val'].mean() * 0.8 # Contoh modifikasi
-            val_p4 = df['Maturity_Val'].median()
-            val_p5 = df['Maturity_Val'].std() + 2 # Contoh untuk variasi
-            
-            # Membuat Dataframe
             pentagon_data = pd.DataFrame(dict(
                 r=[val_p1, val_p2, val_p3, val_p4, val_p5], 
-                theta=['P1- Regulasi & Kepatuhan', 
-                       'P2- Finansial', 
-                       'P3- Integritas data', 
-                       'P4- Operasional', 
-                       'P5- Reputasi']
+                theta=['P1- Regulasi & Kepatuhan', 'P2- Finansial', 'P3- Integritas data', 'P4- Operasional', 'P5- Reputasi']
             ))
             
-            # Plot
             fig_radar = px.line_polar(pentagon_data, r='r', theta='theta', line_close=True)
             fig_radar.update_traces(fill='toself')
-            fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5]))) # Membatasi skala 0-5
+            fig_radar.update_layout(polar=dict(radialaxis=dict(range=[0, 5])))
             st.plotly_chart(fig_radar, use_container_width=True)
+            st.info("Catatan: Grafik ini dikalkulasi secara otomatis berdasarkan rata-rata Maturity dan Kerugian dari data Anda.")
+
+    except Exception as e:
+        st.error(f"Terjadi kesalahan pada data: {e}")
 else:
     st.info("Silakan upload file untuk memulai.")
