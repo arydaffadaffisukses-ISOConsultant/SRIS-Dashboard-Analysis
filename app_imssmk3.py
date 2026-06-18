@@ -81,6 +81,11 @@ df['Implementation Risk Maturity'] = pd.to_numeric(df['Implementation Risk Matur
 df['Estimasi Kerugian Finansial Atas Temuan Audit'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
 
 # 2. Sekarang baru buat grafik (gunakan angka konstan untuk size agar tidak error)
+# 1. Pastikan kolom diubah menjadi angka terlebih dahulu (jika gagal, jadi 0)
+df['Implementation Risk Maturity'] = pd.to_numeric(df['Implementation Risk Maturity'], errors='coerce').fillna(0)
+df['Estimasi Kerugian Finansial Atas Temuan Audit'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
+
+# 2. Sekarang baru buat grafik (gunakan angka konstan untuk size agar tidak error)
 fig_bubble = px.scatter(df, 
                         x='Implementation Risk Maturity', 
                         y='Estimasi Kerugian Finansial Atas Temuan Audit',
@@ -88,9 +93,6 @@ fig_bubble = px.scatter(df,
                         color='Departemen Divisi/Area',
                         hover_name='Departemen Divisi/Area', 
                         template="plotly_white")
-                                size='Implementation Risk Maturity', color='Departemen Divisi/Area', 
-                                hover_name='Departemen Divisi/Area', size_max=40, template="plotly_white")
-        st.plotly_chart(fig_bubble, use_container_width=True)
 
     # Tab 3: AI Analyst
     with tab3:
