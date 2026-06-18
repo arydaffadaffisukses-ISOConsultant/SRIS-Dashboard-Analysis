@@ -62,7 +62,8 @@ if uploaded_file is not None:
             return 0
 
         for col in cols_pentagon:
-            if col in df.columns: df[col] = df[col].apply(clean_and_map)
+            if col in df.columns: 
+                df[col] = df[col].apply(clean_and_map)
         
         avg_scores = df[cols_pentagon].mean().values
         categories = ['Regulasi', 'Finansial', 'Integritas', 'Operasional', 'Reputasi']
@@ -72,19 +73,19 @@ if uploaded_file is not None:
         st.plotly_chart(fig_radar, use_container_width=True)
 
         st.subheader("📈 Korelasi Finansial")
-        # Bersihkan data untuk grafik
+        # Pastikan kolom sudah numerik
         df['Kerugian_Clean'] = pd.to_numeric(df['Estimasi Kerugian Finansial Atas Temuan Audit'], errors='coerce').fillna(0)
         
-        # Gunakan kategori sebagai sumbu X agar tidak berantakan
-        # Cukup buat dataframe yang rapi, lalu panggil ini:
-        st.bar_chart(df.groupby('Departemen Divisi/Area')['Kerugian_Clean'].sum()) 
-                                x='Departemen Divisi/Area', 
-                                y='Kerugian_Clean',
-                                size='Kerugian_Clean', 
-                                color='Departemen Divisi/Area',
-                                hover_name='Detail Temuan Ketidaksesuaian', 
-                                template="plotly_white",
-                                title="Estimasi Kerugian per Departemen")
+        # Grafik sederhana yang stabil
+        fig_bubble = px.scatter(
+            df, 
+            x='Departemen Divisi/Area', 
+            y='Kerugian_Clean',
+            size='Kerugian_Clean', 
+            color='Departemen Divisi/Area',
+            hover_name='Detail Temuan Ketidaksesuaian', 
+            template="plotly_white"
+        )
         st.plotly_chart(fig_bubble, use_container_width=True)
 
     # --- Tab 3: AI Analyst ---
